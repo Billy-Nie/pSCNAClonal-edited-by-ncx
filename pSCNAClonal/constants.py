@@ -46,22 +46,22 @@ COVERAGE = 30
 ####################
 #  BAF parameters  #
 ####################
-BAF_THRESHOLD = 0.5
-BAF_N_MIN = 0.49
+BAF_THRESHOLD = 0.35
+BAF_N_MIN = 0.35
 
 BAF_COUNTS_MIN = 10
 BAF_COUNTS_MAX = 95
 
 BAF_BINS = np.array(range(0, 100 + 1))/100.0
 LOH_FRAC_MAX = 0.25
-SITES_NUM_MIN = 1
+SITES_NUM_MIN = 5
 BINOM_TEST_P = 0.5
 # default BINOM_TEST_THRED = 0.025
 # for 30x read depth,
 BINOM_TEST_THRED = 0.025
 BINOM_TEST_THRED_APM = 0.18
 
-APM_N_MIN = 0.4
+APM_N_MIN = 0.4 #This parameter is very important for baseline selection
 
 EMPIRI_BAF = 0.485
 EMPIRI_AAF = 1.0 - EMPIRI_BAF
@@ -144,3 +144,8 @@ UPDATE_WEIGHTS = {}
 UPDATE_WEIGHTS['x'] = 0.9
 UPDATE_WEIGHTS['y'] = 0.1
 
+################################
+# Stripe decompose parameters  #
+################################
+
+DECOMPOSE_NUMBER_THRESHOLD = 10

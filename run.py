@@ -66,6 +66,8 @@ parserPreprocess.add_argument("--pklFlag",default=False,type=bool,help="The pkl 
 
 parserPreprocess.set_defaults(func = run_process)
 
+
+
 ########################
 #   model process      #
 ########################
@@ -98,8 +100,8 @@ parser_postprocess.set_defaults(func=run_postprocess)
 ############################
 #          run             #
 ############################
+
 args = parser.parse_args()
 args.func(args)
-
 
 

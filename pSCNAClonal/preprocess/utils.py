@@ -74,7 +74,8 @@ def BEDParser(bedName):
         if chromIdx == -1:
             continue
 
-        chromName, start, end, gc = fields[0:4]
+        chromName, start, end = fields[0:3]
+        gc = fields[-1]
 
         chromNameL.append(chromName)
         startL.append(int(start))

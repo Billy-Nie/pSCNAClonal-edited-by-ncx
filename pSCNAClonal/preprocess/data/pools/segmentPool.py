@@ -88,11 +88,7 @@ class SegmentPool:
         samChromFormat = get_chrom_format(map(lambda x: x['SN'], samSQ))
         chromLenL, chromIdxL = get_chrom_lens_idxs(chromIdxL, samSQ)
 
-        if containsReadNum:
-            bedChromL, bedStartL, bedEndL, tReadNumL, nReadNumL, gcL =\
-                BEDnParser(bedName)
-        else:
-            bedChromL, bedStartL, bedEndL, gcL = BEDParser(bedName)
+        bedChromL, bedStartL, bedEndL, gcL = BEDParser(bedName)
         get_chrom_format(bedChromL)
         bedNum = len(bedChromL)
 

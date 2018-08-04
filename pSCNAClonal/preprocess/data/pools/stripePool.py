@@ -17,6 +17,7 @@ import numpy as np
 import scipy.cluster.hierarchy as hierarchy
 from sklearn.cluster import MeanShift, estimate_bandwidth
 
+from pSCNAClonal import constants
 from pSCNAClonal.preprocess.data.elements.stripe import Stripe
 from pSCNAClonal.preprocess.plotGC import (BAFPlot, GCStripePlot,
                                            GCStripePoolPlot, plotMeanShift)
@@ -142,7 +143,6 @@ class StripePool(object):
                 subSegL, subSegIdxL = map(list, zip(*segsLnoPCIDL))
                 tempStripe.init_segs(subSegL, subSegIdxL)
                 self.stripes.append(tempStripe)
-            """
             else:
                 tempTags = set([seg.tag for seg, idx in segsLnoPCIDL])
                 for tempTag in tempTags:
@@ -164,80 +164,105 @@ class StripePool(object):
                     tempStripe.tag = tempTag
                     self.stripes.append(tempStripe)
                     tagIdx = tagIdx + 1
-            """
 
         if len(segsIDL) > 0:
+
+            ##############################################
+            #  We only decompose large number segments   #
+            ##############################################
+            decomposeNumThresh = constants.DECOMPOSE_NUMBER_THRESHOLD
+
             segL, segIdxL = map(list, zip(*segsIDL))
             segsBAFL = map(getBAFofSeg, segL)
-            pT = np.array(segsBAFL)
-            print len(pT)
-            #pT中包含有缺失的值，所以使用如下方法去除去缺失值的行
-            pT = pT[~np.isnan(pT)]
-            #TODO : 如果说去掉了缺失值之后长度变成了0
-            pT = pT.reshape(pT.shape[0], 1)
-            if len(pT) == 0:
-                tempStripe = Stripe()
-                tempStripe.sid = "{0}".format(str(cId))
-                subSegL, subSegIdxL = map(list, zip(*segsIDL))
-                tempStripe.init_segs(subSegL, subSegIdxL)
-                self.stripes.append(tempStripe)
-                return
 
-            y = np.ones(pT.shape)
-            pTy = np.hstack((pT, y))
-            bandwidth = estimate_bandwidth(pTy, quantile=0.2, n_samples=500)
-            if bandwidth == 0:
-                bandwidth = 1
-            ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
-            ms.fit(pTy)
-            labels = ms.labels_
-            clusterCenters = ms.cluster_centers_
-
-            plotMeanShift(pTy, labels, clusterCenters)
-
-            segLabelL = [
-                self._getSegLabl(seg, clusterCenters) for seg in segL
-            ]
-
-            tempL = zip(segL, segIdxL, segLabelL)
-
-            # 注意此处要对目标stripe的seg进行tag分类,分类之后在生成条带
-            for label in set(segLabelL):
-                if label == -1:
-                    continue
-
-                subTempL = [(seg, idx) for seg, idx, l in tempL if l == label]
-
-                subSegL, subSegIdxL = map(list, zip(*subTempL))
-
+            if len(segL) < decomposeNumThresh:
                 if not byTag:
                     tempStripe = Stripe()
-                    tempStripe.sid = "{0}_{1}".format(str(cId), str(label))
-                    tempStripe.init_segs(subSegL, subSegIdxL)
+                    tempStripe.sid = "{0}".format(str(cId))
+                    tempStripe.init_segs(segL, segIdxL)
                     self.stripes.append(tempStripe)
                 else:
-                    tempTags = set([seg.tag for seg in subSegL])
+                    tempTags = set([seg.tag for seg in segL])
                     for tempTag in tempTags:
                         tagIdx = 0
                         if "BASELINE" == tempTag:
                             continue
-                        subSubTempL = [(seg, idx) for seg, idx in subTempL if
-                                       seg.tag == tempTag ]
-                        subSubSegL, subSubSegIdxL = map(list, zip(*subSubTempL))
+                        tempL = [(seg,idx) for seg, idx in zip(segL,segIdxL)
+                                 if seg.tag == tempTag]
+                        subSegL, subSegIdxL = map(list. zip(*tempL))
                         tempStripe = Stripe()
-                        tempStripe.name = "{0}_{1}_{2}_{3}".format(str(cId),
-                                                                label,
-                                                                tempTag,
-                                                                str(tagIdx))
-                        tempStripe.sid = "{0}_{1}_{2}_{3}".format(str(cId),
-                                                                label,
-                                                                tempTag,
-                                                                str(tagIdx))
-
-                        tempStripe.init_segs(subSubSegL, subSubSegIdxL)
+                        tempStripe.name = "{0}_{1}_{2}".format(str(cId),tempTag,str(tagIdx))
+                        tempStripe.init_segs(subSegL,subSegIdxL)
                         tempStripe.tag = tempTag
                         self.stripes.append(tempStripe)
                         tagIdx = tagIdx + 1
+            else:
+                pT = np.array(segsBAFL)
+                pT = pT[~np.isnan(pT)]
+                pT = pT.reshape(pT.shape[0], 1)
+                if len(pT) == 0:
+                    tempStripe = Stripe()
+                    tempStripe.sid = "{0}".format(str(cId))
+                    subSegL, subSegIdxL = map(list, zip(*segsIDL))
+                    tempStripe.init_segs(subSegL, subSegIdxL)
+                    self.stripes.append(tempStripe)
+                    return
+
+                y = np.ones(pT.shape)
+                pTy = np.hstack((pT, y))
+                bandwidth = estimate_bandwidth(pTy, quantile=0.2, n_samples=500)
+                if bandwidth == 0:
+                    bandwidth = 1
+                ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
+                ms.fit(pTy)
+                labels = ms.labels_
+                clusterCenters = ms.cluster_centers_
+
+                plotMeanShift(pTy, labels, clusterCenters)
+
+                segLabelL = [
+                    self._getSegLabl(seg, clusterCenters) for seg in segL
+                ]
+
+                tempL = zip(segL, segIdxL, segLabelL)
+
+                # 注意此处要对目标stripe的seg进行tag分类,分类之后在生成条带
+                for label in set(segLabelL):
+                    if label == -1:
+                        continue
+
+                    subTempL = [(seg, idx) for seg, idx, l in tempL if l == label]
+
+                    subSegL, subSegIdxL = map(list, zip(*subTempL))
+
+                    if not byTag:
+                        tempStripe = Stripe()
+                        tempStripe.sid = "{0}_{1}".format(str(cId), str(label))
+                        tempStripe.init_segs(subSegL, subSegIdxL)
+                        self.stripes.append(tempStripe)
+                    else:
+                        tempTags = set([seg.tag for seg in subSegL])
+                        for tempTag in tempTags:
+                            tagIdx = 0
+                            if "BASELINE" == tempTag:
+                                continue
+                            subSubTempL = [(seg, idx) for seg, idx in subTempL if
+                                            seg.tag == tempTag ]
+                            subSubSegL, subSubSegIdxL = map(list, zip(*subSubTempL))
+                            tempStripe = Stripe()
+                            tempStripe.name = "{0}_{1}_{2}_{3}".format(str(cId),
+                                                                    label,
+                                                                    tempTag,
+                                                                    str(tagIdx))
+                            tempStripe.sid = "{0}_{1}_{2}_{3}".format(str(cId),
+                                                                    label,
+                                                                    tempTag,
+                                                                    str(tagIdx))
+
+                            tempStripe.init_segs(subSubSegL, subSubSegIdxL)
+                            tempStripe.tag = tempTag
+                            self.stripes.append(tempStripe)
+                            tagIdx = tagIdx + 1
 
         # merge baseline, or not baseline in the stripe? toggle
         #  TODO: check out
