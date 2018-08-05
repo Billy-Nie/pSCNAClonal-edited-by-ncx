@@ -22,6 +22,7 @@ from pSCNAClonal.preprocess.data.elements.stripe import Stripe
 from pSCNAClonal.preprocess.plotGC import (BAFPlot, GCStripePlot,
                                            GCStripePoolPlot, plotMeanShift)
 from pSCNAClonal.preprocess.utils import getBAFofSeg
+import os
 
 
 class StripePool(object):
@@ -42,15 +43,16 @@ class StripePool(object):
 
         self.stripes = []  # stripes is a lsit of stripe class
 
-    def get(self, byTag=False):
+    def get(self, byTag=False, plot=True):
         """
         if byTag, the output of Stripe should contains tag too.
         """
         # gsp = GCStripePlot(self.segPool.segments, 2000)
         # gsp.plot()
-        self._aggregate(self._yDown, self._yUp, self.stripeNum, self.noiseStripeNum, byTag)
-        gspp = GCStripePoolPlot(self)
-        gspp.plot()
+        self._aggregate(self._yDown, self._yUp, self.stripeNum, self.noiseStripeNum, byTag, plot)
+        if plot:
+            gspp = GCStripePoolPlot(self)
+            gspp.plot()
 
     def output_txt(self, outFileName):
         with open(outFileName, 'w') as outFile:
@@ -74,11 +76,22 @@ class StripePool(object):
                     s.nReadNum,
                     s.tag))
 
-    def _aggregate(self, yDown, yUp, stripeNum, noiseStripeNum=2, byTag=False):
+    def _aggregate(self, yDown, yUp, stripeNum, noiseStripeNum=2, byTag=False,plot=True):
         """The aggregation operations for segments in data
         :returns: stripes data structure
         """
         assert stripeNum > 0
+        def writeToFile(self,cluster):
+            segments = self.segPool.segments
+            x = np.array(map(lambda seg:seg.gc,segments))
+            y = np.array(map(lambda seg: np.log(seg.tReadNum + 1) -
+                                          np.log(seg.nReadNum + 1), segments))
+            if not os.path.exists("plot_data/aggregate_data"):
+                os.makedirs("plot_data/aggregate_data")
+            outFile = open("plot_data/aggregate_data/aggregate_data.txt", "wr")
+            for i in range(0,len(cluster)):
+                outFile.write("{0}\t{1}\t{2}\n".format(x[i],y[i],cluster[i]))
+            outFile.close()
 
         rdRaioLog = []
 
@@ -93,7 +106,9 @@ class StripePool(object):
 
         yFcd = ycV.reshape(ycV.shape[0], 1)
         clusters = hierarchy.fclusterdata(
-            yFcd, stripeNum + noiseStripeNum, criterion="maxclust")
+            yFcd, stripeNum + noiseStripeNum, criterion="maxclust",method="complete")
+
+        writeToFile(self,clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
         # 此处获取最小和最大值之间的条带的方法是：直接去除这些位置不列入计算范围
@@ -104,9 +119,9 @@ class StripePool(object):
 
         for cId, _ in mccs:
             # 对每一个条带进行裂解操作，生成子条带, return
-            self._decompose(cId, clusters, statusYcV, False)
+            self._decompose(cId, clusters, statusYcV, False,plot)
 
-    def _decompose(self, cId, clusters, statusYcV, byTag=False):
+    def _decompose(self, cId, clusters, statusYcV, byTag=False,plot=True):
         """The decomposition operations for segments in data
 
         :parameters: TODO
@@ -200,6 +215,7 @@ class StripePool(object):
                 pT = np.array(segsBAFL)
                 pT = pT[~np.isnan(pT)]
                 pT = pT.reshape(pT.shape[0], 1)
+                """
                 if len(pT) == 0:
                     tempStripe = Stripe()
                     tempStripe.sid = "{0}".format(str(cId))
@@ -207,6 +223,9 @@ class StripePool(object):
                     tempStripe.init_segs(subSegL, subSegIdxL)
                     self.stripes.append(tempStripe)
                     return
+                """
+
+
 
                 y = np.ones(pT.shape)
                 pTy = np.hstack((pT, y))
@@ -218,7 +237,8 @@ class StripePool(object):
                 labels = ms.labels_
                 clusterCenters = ms.cluster_centers_
 
-                plotMeanShift(pTy, labels, clusterCenters)
+                if plot:
+                    plotMeanShift(cId,pTy, labels, clusterCenters)
 
                 segLabelL = [
                     self._getSegLabl(seg, clusterCenters) for seg in segL
@@ -263,6 +283,7 @@ class StripePool(object):
                             tempStripe.tag = tempTag
                             self.stripes.append(tempStripe)
                             tagIdx = tagIdx + 1
+
 
         # merge baseline, or not baseline in the stripe? toggle
         #  TODO: check out

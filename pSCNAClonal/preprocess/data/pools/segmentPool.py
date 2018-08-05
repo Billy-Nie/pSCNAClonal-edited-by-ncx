@@ -164,7 +164,7 @@ class SegmentPool:
         noiseStripeNum = constants.NOISESTRIPENUM
 
         tempSP = StripePool(self, self.baseline, yDown, yUp, stripeNum, noiseStripeNum)
-        tempSP.get()
+        tempSP.get(False, False)
 
         # 从条带中找到与基线最接近的条带作为基线条带
 
