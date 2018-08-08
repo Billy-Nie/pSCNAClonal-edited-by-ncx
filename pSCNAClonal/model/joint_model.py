@@ -34,10 +34,11 @@ class JointProbabilisticModel(ProbabilisticModel):
             self.priors = {}
             self.priors['omega'] = np.array(get_omega(self.max_copynumber))*1.0
 
-    def preprocess(self):
-        #self.data.get_LOH_frac()
-        self.data.get_LOH_status(self.baseline_thred)
-        self.data.compute_Lambda_S()
+    # def preprocess(self):
+        # #self.data.get_LOH_frac()
+        # 这个函数用来计算baseline，所以此处没有用
+        # self.data.get_LOH_status(self.baseline_thred)
+        # self.data.compute_Lambda_S()
 
     def _init_components(self):
         self.model_trainer_class = JointModelTrainer
@@ -158,16 +159,33 @@ class JointModelTrainer(ModelTrainer):
         # under baseline. If above, set copy number range [2, max_copy_number]
         # else set copy number range [0, 2]. If target stripe is baseline, set
         # copy number to be 2.
-        if self.stripePool.segPool.segments[j].LOHStatus != 'NONE':
-            h_idx = self.latent_variables.sufficient_statistics['psi'][j].argmax()
-            phi_idx = self.latent_variables.sufficient_statistics['kappa'][j].argmax()
-            h_j = self.config_parameters.allele_config[h_idx]
+
+        loga = np.log(self.stripePool.stripes[j].tReadNum + 1) -\
+            np.log(self.stripePool.stripes[j].nReadNum + 1)
+        CNArray = np.array(self.config_parameters.allele_config_CN)
+        indices = np.array([])
+
+        if loga > self.stripePool.baseline:
+            indices = np.where(CNArray > 2)[0]
+        else:
+            indices = np.where(CNArray <= 2)[0]
+
+        if len(self.stripePool.stripes[j].pairedCounts) > 1:
+            h_idx = self.latent_variables.sufficient_statistics[
+                'psi'][j][indices].argmax()
+            phi_idx = self.latent_variables.sufficient_statistics[
+                'kappa'][j][indices].argmax()
+            h_j = np.array(self.config_parameters.allele_config)[indices][h_idx]
         else:
             ll_CNA_j = self.model_likelihood._ll_RD_by_stripe(self.model_parameters, j)
-            phi_idx, h_idx = np.unravel_index(ll_CNA_j.argmax(), ll_CNA_j.shape)
+            phi_idx, h_idx = np.unravel_index(ll_CNA_j[,indices].argmax(), ll_CNA_j[,indices].shape)
             h_j = 'NONE'
 
-        c_H_j = self.config_parameters.allele_config_CN[h_idx]
+        # 第一步需要从allele_config_CN中过滤出目标，然后在目标范围内进行求解最大
+        # 值。
+        # array
+
+        c_H_j = np.array(self.config_parameters.allele_config_CN)[indices][h_idx]
         phi_j = self.model_parameters.parameters['phi'][phi_idx]
         subclone_cluster_j = phi_idx + 1
 
@@ -203,23 +221,26 @@ class JointModelTrainer(ModelTrainer):
         ll = 0
 
         for j in range(0, J):
-            if self.stripePool.segPool.segments[j].LOHStatus == 'NONE':
+            if len(self.stripePool.stripes[j].pairedCounts) < 1:
                 continue
 
             ll_j = self.model_likelihood.ll_by_stripe(self.model_parameters, j)
             ll_j = np.log(rho[j].reshape((1, H))) + np.log(pi.reshape((K, 1))) + ll_j
 
-            for h in range(0, H):
-                h_T = self.config_parameters.allele_config[h]
+            # for h in range(0, H):
+                # h_T = self.config_parameters.allele_config[h]
 
-                if self.stripePool.segPool.segments[j].LOHStatus == 'FALSE' and check_balance_allele_type(h_T) == False:
-                    ll_j[:, h] = -1.0*constants.INF
+                # 此处只是简单的去除三种情况。
+                # 由于在ll_by_stripe中已经计算了BAF，如果出现杂合缺失的情况，自
+                # 然会赋予对应的位置小概率值，所以此处应该不需要判断杂合缺失
+                # if self.stripePool.segPool.segments[j].LOHStatus == 'FALSE' and check_balance_allele_type(h_T) == False:
+                    # ll_j[:, h] = -1.0*constants.INF
 
-                if self.stripePool.segPool.segments[j].LOHStatus == 'TRUE' and check_balance_allele_type(h_T) == True:
-                    ll_j[:, h] = -1.0*constants.INF
+                # if self.stripePool.segPool.segments[j].LOHStatus == 'TRUE' and check_balance_allele_type(h_T) == True:
+                    # ll_j[:, h] = -1.0*constants.INF
 
-                if self.stripePool.segPool.segments[j].baselineLabel == 'TRUE' and h_T != constants.ALLELE_TYPE_BASELINE:
-                    ll_j[:, h] = -1.0*constants.INF
+                # if self.stripePool.segPool.segments[j].baselineLabel == 'TRUE' and h_T != constants.ALLELE_TYPE_BASELINE:
+                    # ll_j[:, h] = -1.0*constants.INF
 
             ll_j = np.logaddexp.reduce(ll_j, axis=1)
             ll_j = np.logaddexp.reduce(ll_j, axis=0)
@@ -239,23 +260,28 @@ class JointModelTrainer(ModelTrainer):
         phi = self.model_parameters.parameters['phi']
 
         for j in range(0, J):
-            if self.stripePool.segPool.segments[j].LOHStatus != 'NONE':
+            # if self.stripePool.segPool.segments[j].LOHStatus != 'NONE':
+                # continue
+            if len(self.stripePool.stripes[j].pairedCounts) < 1:
                 continue
 
             ll_j = self.model_likelihood.ll_by_stripe(self.model_parameters, j)
             ll_j = np.log(rho[j].reshape((1, H))) + np.log(pi.reshape((K, 1))) + ll_j
 
-            for h in range(0, H):
-                h_T = self.config_parameters.allele_config[h]
+            # 此处只是简单的去除三种情况。
+            # 由于在ll_by_stripe中已经计算了BAF，如果出现杂合缺失的情况，自
+            # 然会赋予对应的位置小概率值，所以此处应该不需要判断杂合缺失
+            # for h in range(0, H):
+                # h_T = self.config_parameters.allele_config[h]
 
-                if self.stripePool.segPool.segments[j].LOHStatus == 'FALSE' and check_balance_allele_type(h_T) == False:
-                    ll_j[:, h] = -1.0*constants.INF
+                # if self.stripePool.segPool.segments[j].LOHStatus == 'FALSE' and check_balance_allele_type(h_T) == False:
+                    # ll_j[:, h] = -1.0*constants.INF
 
-                if self.stripePool.segPool.segments[j].LOHStatus == 'TRUE' and check_balance_allele_type(h_T) == True:
-                    ll_j[:, h] = -1.0*constants.INF
+                # if self.stripePool.segPool.segments[j].LOHStatus == 'TRUE' and check_balance_allele_type(h_T) == True:
+                    # ll_j[:, h] = -1.0*constants.INF
 
-                if self.stripePool.segPool.segments[j].baselineLabel == 'TRUE' and h_T != constants.ALLELE_TYPE_BASELINE:
-                    ll_j[:, h] = -1.0*constants.INF
+                # if self.stripePool.segPool.segments[j].baselineLabel == 'TRUE' and h_T != constants.ALLELE_TYPE_BASELINE:
+                    # ll_j[:, h] = -1.0*constants.INF
 
             psi_j_temp = np.logaddexp.reduce(ll_j, axis=0)
             kappa_j_temp = np.logaddexp.reduce(ll_j, axis=1)
@@ -296,7 +322,9 @@ class JointModelTrainer(ModelTrainer):
         kappa_ = np.zeros(K)
 
         for j in range(0, J):
-            if self.stripePool.segPool.segments[j].LOHStatus != 'NONE':
+            # if self.stripePool.segPool.segments[j].LOHStatus != 'NONE':
+                # continue
+            if len(self.stripePool.stripes[j].pairedCounts) < 1:
                 continue
 
             kappa_ += kappa[j]
@@ -472,9 +500,9 @@ class JointModelLikelihood(ModelLikelihood):
         d_T_j = a_T_j + b_T_j
 
         ll = np.log(Q_HG) + log_binomial_likelihood_joint(b_T_j, d_T_j, mu_E)
-        ll_LOH_j = np.logaddexp.reduce(ll, axis=3).sum(axis=0)
+        ll_BAF_j = np.logaddexp.reduce(ll, axis=3).sum(axis=0)
 
-        return ll_LOH_j
+        return ll_BAF_j
 
     def complete_ll_by_subclone(self, model_parameters, latent_variables, k):
         J = self.stripePool.stripeNum
@@ -554,7 +582,7 @@ class JointModelLikelihood(ModelLikelihood):
         d_T_j = a_T_j + b_T_j
 
         ll = np.log(Q_HG) + log_binomial_likelihood_joint(b_T_j, d_T_j, mu_E)
-        ll_LOH_j = np.logaddexp.reduce(ll, axis=3).sum(axis=0)
+        ll_BAF_j = np.logaddexp.reduce(ll, axis=3).sum(axis=0)
 
-        return ll_LOH_j
+        return ll_BAF_j
 
