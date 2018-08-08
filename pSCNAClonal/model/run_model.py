@@ -27,16 +27,16 @@ def run_model(args):
     if args.subclone_num < 0:
         print "Subclone number must be positive integers."
         sys.exit(1)
-        
+
     if args.subclone_num == 0:
         run_all_subclone(args)
     else:
         run_one_subclone(args)
-    
-        
+
+
 def run_one_subclone(args):
     time_start = time.time()
-    
+
     # run the joint model
     joint_model = JointProbabilisticModel(args.max_copynumber, args.subclone_num, \
                                           args.baseline_thred)
@@ -44,42 +44,42 @@ def run_one_subclone(args):
     #joint_model.preprocess()
     joint_model.run(args.max_iters, args.stop_value)
     joint_model.write_results(args.output_filename_base)
-    
+
     time_end = time.time()
-    
+
     print "*" * 100
     print "* Finish."
     print "* Run time : {0:.2f} seconds".format(time_end - time_start)
     print "* Optimum log-likelihood : ", joint_model.trainer.ll
     print "*" * 100
     sys.stdout.flush()
-    
+
 
 def run_all_subclone(args):
     time_start = time.time()
-    
+
     ll_lst = []
     subclone_num_lst = []
-    
+
     for subclone_num in range(1, 6):
         # run the joint model
         output_filename_base_k = args.output_filename_base + '_subclone_num_' + \
                                  str(subclone_num)
-        
+
         joint_model = JointProbabilisticModel(args.max_copynumber, subclone_num,
                                               args.baseline_thred)
         joint_model.read_stripePool(args.pklPath)
         #joint_model.preprocess()
         joint_model.run(args.max_iters, args.stop_value)
         joint_model.write_results(output_filename_base_k)
-        
+
         ll_lst.append(joint_model.trainer.ll)
         subclone_num_lst.append(subclone_num)
-    
+
     time_end = time.time()
-    
+
     run_time = time_end - time_start
-    
+
     get_summary(ll_lst, subclone_num_lst, run_time, args.output_filename_base)
 
 
@@ -89,25 +89,25 @@ def get_summary(ll_lst, subclone_num_lst, run_time, output_filename_base):
 
     subclone_num_optimum, ll_change_ratio, ll_change_percent, ll_change_ratio_total = \
     model_selection_by_ll(ll_lst, subclone_num_lst)
-    
+
     print "*" * 100
     print "* Finish."
     print "* Run time : {0:.2f} seconds".format(run_time)
     print "*" * 100
-    
+
     for i in range(0, 5):
         print "* Log-likelihood for subclone number %s : %s" % (i+1, ll_lst[i])
         outfile.write('Log-likelihood for subclone number %s : %s\n' % (i+1, ll_lst[i]))
-    
+
     print "*" * 100
     outfile.write("*" * 100 + '\n')
-        
+
     for i in range(0, 4):
         print "* Log-likelihood change ratio for subclone number %s -> %s : %s" \
         % (i+1, i+2, ll_change_ratio[i])
         outfile.write('Log-likelihood change ratio for subclone number %s -> %s : %s\n' \
         % (i+1, i+2, ll_change_ratio[i]))
-        
+
     print "* Log-likelihood change ratio in total for subclone number %s -> %s : %s" \
     % (1, 5, ll_change_ratio_total)
     outfile.write('Log-likelihood change ratio in total for subclone number %s -> %s : %s\n' \
@@ -124,11 +124,11 @@ def get_summary(ll_lst, subclone_num_lst, run_time, output_filename_base):
 
     print "*" * 100
     outfile.write("*" * 100 + '\n')
-    
+
     print "* Suggested subclone number : ", subclone_num_optimum
     print "*" * 100
     sys.stdout.flush()
-    
+
     outfile.write('Suggested subclone number : %s\n' % (subclone_num_optimum))
-    
+
     outfile.close()
