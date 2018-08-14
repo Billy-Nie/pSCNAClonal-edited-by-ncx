@@ -504,9 +504,6 @@ def plotMeanShift(sid, X, labels, cluster_centers):
     plt.show()
 
 
-
-
-
 def main():
     """
     :returns: TODO

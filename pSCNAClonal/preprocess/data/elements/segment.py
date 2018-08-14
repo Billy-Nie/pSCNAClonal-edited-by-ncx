@@ -28,7 +28,7 @@ class Segment:
         self.APMStatus = 'NONE'
 
         self.pairedCounts = None
-        self.BAFCounts = None
+        # self.BAFCounts = None
 
         self.baselineLabel = 'FALSE'
         self.tag = '0'

@@ -175,7 +175,7 @@ class SegmentPool:
         targetSP = None
         for sp in tempSP.stripes:
             spr = np.abs(self.baseline - np.log((sp.tReadNum + 1.0) /
-                                                (sp.tReadNum + 1.0)))
+                                                (sp.nReadNum + 1.0)))
             if tempDis > spr:
                 tempDis = spr
                 targetSP = sp
@@ -260,6 +260,8 @@ class SegmentPool:
             print >> sys.stderr, 'Error: No diploid segments found, existing...'
             sys.exit(1)
 
+        print "self.baseline:{0}".format(self.baseline)
+        raw_input()
         self.baseline = rdrMinLog
         self.Lambda_S = math.e ** rdrMinLog
 

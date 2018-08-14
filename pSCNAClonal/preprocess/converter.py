@@ -101,6 +101,123 @@ class BamConverter:
         # self._dump_txt(stripePool, "stripePool.txt")
         self._dump(self._segPool, "segPool.pkl")
 
+        self.__generate_ROC_table(blSegs,stripePool,self._segPool.segments)
+
+    def __generate_ROC_table(self,blSegs,stripePool,segPool):
+
+        #根据每一个segment的开始和结束的位置来确定变异的类型
+        #具体变异类型由answers/rd30stage0.seg.txt中第二列的括号里的东西给定
+        def decide_veriation_id(segment):
+            if segment.start >= 210682863 and segment.end <= 210782863:
+                return 2
+            elif segment.start >= 152728665 and segment.end <= 152828665:
+                return 1
+            elif segment.start >= 209873187 and segment.end <= 209973187:
+                return 3
+            elif segment.start >= 152829765 and segment.end <= 153029765:
+                return "base_line"
+
+        #统计每一个stripe里面的segment的变异类型，选择变异类型最多的那一个作为这个stripe的变异类型
+        def decide_stripe_variation_id(stripe,segPool):
+            variation_1 = 0
+            variation_2 = 0
+            variation_3 = 0
+            variation_baseline = 0
+            for segsidx in stripe.segsIdxL:
+                seg_variation_id =decide_veriation_id(segPool[segsidx])
+                if seg_variation_id == 2:
+                    variation_2 += 1
+                elif seg_variation_id == 1:
+                    variation_1 += 1
+                elif seg_variation_id == 3:
+                    variation_3 += 1
+                elif seg_variation_id == "base_line":
+                    variation_baseline += 1
+            max_number = max(variation_3,variation_baseline,variation_1,variation_2)
+            if max_number == variation_2:
+                return 2
+            elif max_number == variation_1:
+                return 1
+            elif max_number == variation_3:
+                return 3
+            elif max_number == variation_baseline:
+                return "base_line"
+
+        #计算某一个stripe的TP,FP,FN,TN(True Positive,False Positive)
+        def calculate_TP_FP_FN_TN(stripeSegs,segPool,variation_id):
+            TP = 0
+            FP = 0
+            FN = 0
+            TN = 0
+            for seg in segPool:
+                true_variation_id = decide_veriation_id(seg)
+                if seg in stripeSegs:
+                    if variation_id == true_variation_id:
+                        TP += 1
+                    else:
+                        FP += 1
+                else:
+                    if variation_id != true_variation_id:
+                        TN += 1
+                    else:
+                        FN += 1
+            return TP,FP,FN,TN
+
+        def get_stripe_segs(stripe,segPool):
+            stripe_seg = []
+            for segID in stripe.segsIdxL:
+                stripe_seg.append(segPool[segID])
+
+            return stripe_seg
+
+        ROCTable = open("answers/ROC_table.txt", "w")
+        ROCTable.write("Stripe\tTP\tFP\tFN\tTN\tvariation id\n")
+        """
+        lineNum = 0
+        variation_1_l = []
+        variation_2_l = []
+        variation_3_l = []
+        variation_baseline = []
+        while 1:
+            line = answerFile.readline()
+            line = line.strip("\n")
+            lineNum+=1
+            if lineNum == 1:
+                continue
+            else:
+                chrom, start, end, sampleRead, referenceReads, gc,variation_id = line.split("\t")
+            if variation_id == str(1):
+                variation_1_l.append((start,end))
+            elif variation_id == str(2):
+                variation_2_l.append((start,end))
+            elif variation_id == str(3):
+                variation_3_l.append((start,end))
+            elif variation_id == "base_line":
+                variation_baseline.append((start,end))
+            if not line:
+                break
+        """
+        TP,FP,FN,TN = calculate_TP_FP_FN_TN(blSegs,segPool,"base_line")
+        print TP
+        print FP
+        print FN
+        print TN
+        print '\n'
+
+        for stripe in stripePool.stripes:
+            stripe_variation_id = decide_stripe_variation_id(stripe,segPool)
+            TP,NP,FN,TN = calculate_TP_FP_FN_TN(get_stripe_segs(stripe,segPool),segPool,stripe_variation_id)
+            print stripe.sid
+            print stripe_variation_id
+            print "TP:" + str(TP)
+            print "FP:" + str(FP)
+            print "FN:"+ str(FN)
+            print "TN:" + str(TN)
+            print '\n'
+
+
+
+
     def _dump_txt(self, stripePool, outFilePath):
         """
         out put stripePool into plain txt
@@ -305,7 +422,7 @@ class BamConverter:
         for j in range(0, segNum):
             pairedCountsJ, BAFCountsJ = countsTL[j]
             segPool.segments[j].pairedCounts = pairedCountsJ
-            segPool.segments[j].BAFCounts = BAFCountsJ
+            # segPool.segments[j].BAFCounts = BAFCountsJ
 
 # ===============================================================================
 #  Function

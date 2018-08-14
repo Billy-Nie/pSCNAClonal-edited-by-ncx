@@ -108,7 +108,7 @@ class StripePool(object):
         clusters = hierarchy.fclusterdata(
             yFcd, stripeNum + noiseStripeNum, criterion="maxclust",method="complete")
 
-        writeToFile(self,clusters)
+        # writeToFile(self,clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
         # 此处获取最小和最大值之间的条带的方法是：直接去除这些位置不列入计算范围
@@ -120,6 +120,7 @@ class StripePool(object):
         for cId, _ in mccs:
             # 对每一个条带进行裂解操作，生成子条带, return
             self._decompose(cId, clusters, statusYcV, False,plot)
+        self.stripeNum = len(self.stripes)
 
     def _decompose(self, cId, clusters, statusYcV, byTag=False,plot=True):
         """The decomposition operations for segments in data
