@@ -61,7 +61,7 @@ BINOM_TEST_P = 0.5
 BINOM_TEST_THRED = 0.025
 BINOM_TEST_THRED_APM = 0.18
 
-APM_N_MIN = 0.4 #This parameter is very important for baseline selection
+APM_N_MIN = 0.40 #This parameter is very important for baseline selection
 
 EMPIRI_BAF = 0.485
 EMPIRI_AAF = 1.0 - EMPIRI_BAF
@@ -112,8 +112,9 @@ VARPI = 0.8 ## gap parameters
 
 YDOWN = -5
 YUP = 5
-STRIPENUM = 6
-NOISESTRIPENUM = 1
+# STRIPENUM = 6
+STRIPENUM = 3
+NOISESTRIPENUM = 0
 
 
 #############################

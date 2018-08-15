@@ -19,7 +19,8 @@ pSCNAClonal_PATH=/home/cxnie/p-scnaclonal-pscnaclonal/
 result_folder=/home/cxnie/p-scnaclonal-pscnaclonal/pipeline/
 normal_bam=/data/yschu/projects/phy-SCNAClonal/subsimtree/rd30/normal_30.bam
 tumor_bam=/data/yschu/projects/phy-SCNAClonal/subsimtree/rd30/tumor_30.stage0.bam
-segments_bed=/data/yschu/projects/phy-SCNAClonal/subsimtree/rd30/sh_result/rd30stage0.seg.splited.gc.txt #bedName
+#segments_bed=/data/yschu/projects/phy-SCNAClonal/subsimtree/rd30/sh_result/rd30stage0.seg.splited.gc.txt #bedName
+segments_bed=/home/cxnie/phy-SCNAClonal-Altered-By-cxNie/subsimtree/rd30/sh_result/rd30stage0.seg.splited.gc.txt #bedName
 
 reference_genome=/data/yschu/data/fasta/reference/chr1.fa
 pathPreFix=$result_folder
@@ -41,7 +42,7 @@ echo "process_num"
 echo $process_num
 
 #default = 6
-max_copynumber=8
+max_copynumber=3
 # parser_run_model.add_argument('--subclone_num', default=0, type=int, help='''Number of subclones within the tumor sample. If not provided, go through [1, 5] and select the best model. Default is None.''')
 subclone_num=3
 #parser_run_model.add_argument('--baseline_thred', default=0.09, type=float, help='''The threshold of LOH SNP sites fraction within each segment to define the segment as baseline. Default is 0.09.''')
@@ -63,10 +64,10 @@ coverage=30
 ####
 ###run###
 python2.7 $pSCNAClonal_PATH/run.py preprocess \
-     $normal_bam \
-     $tumor_bam \
-     $segments_bed \
-     $reference_genome \
+     --nBamName $normal_bam \
+     --tBamName $tumor_bam \
+     --bedName $segments_bed \
+     --refFaName $reference_genome \
      --pathPrefix $pathPreFix \
      --subcloneNum $subclone_num \
      --coverage $coverage \
@@ -79,4 +80,5 @@ python2.7 $pSCNAClonal_PATH/run.py preprocess \
      --processNum $process_num \
      --bedCorrectedPath $BICseq_bed_corrected \
      --pklPath $pkl_path\
-    --gcCorrectionMethod $gcCorrectionMethod \
+     --gcCorrectionMethod $gcCorrectionMethod \
+

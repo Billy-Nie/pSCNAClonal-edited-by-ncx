@@ -260,10 +260,9 @@ class SegmentPool:
             print >> sys.stderr, 'Error: No diploid segments found, existing...'
             sys.exit(1)
 
-        print "self.baseline:{0}".format(self.baseline)
-        raw_input()
         self.baseline = rdrMinLog
         self.Lambda_S = math.e ** rdrMinLog
+        # raw_input()
 
 
     #根据每一个segment的pairedCounts为segments里面的每一个元素设置LOHFrac

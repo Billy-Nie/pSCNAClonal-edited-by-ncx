@@ -89,6 +89,7 @@ class StripePool(object):
             if not os.path.exists("plot_data/aggregate_data"):
                 os.makedirs("plot_data/aggregate_data")
             outFile = open("plot_data/aggregate_data/aggregate_data.txt", "wr")
+            outFile.write("#x\ty\tstripe\n")
             for i in range(0,len(cluster)):
                 outFile.write("{0}\t{1}\t{2}\n".format(x[i],y[i],cluster[i]))
             outFile.close()
@@ -108,7 +109,7 @@ class StripePool(object):
         clusters = hierarchy.fclusterdata(
             yFcd, stripeNum + noiseStripeNum, criterion="maxclust",method="complete")
 
-        # writeToFile(self,clusters)
+        writeToFile(self,clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
         # 此处获取最小和最大值之间的条带的方法是：直接去除这些位置不列入计算范围

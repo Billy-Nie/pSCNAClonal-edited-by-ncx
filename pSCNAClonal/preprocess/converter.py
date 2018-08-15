@@ -12,7 +12,7 @@
 #       History:
 # =============================================================================
 '''
-
+import os
 import pickle as pkl
 import sys
 from multiprocessing import Pool
@@ -21,6 +21,7 @@ import numpy as np
 import pysam
 
 import pSCNAClonal.constants as constants
+import matplotlib.pyplot as plt
 from pSCNAClonal.preprocess.data.pools.segmentPool import SegmentPool
 from pSCNAClonal.preprocess.data.pools.stripePool import StripePool
 from pSCNAClonal.preprocess.iofun import (PairedCountsIterator,
@@ -94,14 +95,15 @@ class BamConverter:
             self._segPool = pkl.load(pklFile )
             pklFile .close()
 
-        blSegs = self._get_baseline()
+
+        self._get_baseline()
 
         stripePool = self._generate_stripe()
         self._dump(stripePool, "stripePool.pkl")
         # self._dump_txt(stripePool, "stripePool.txt")
         self._dump(self._segPool, "segPool.pkl")
 
-        self.__generate_ROC_table(blSegs,stripePool,self._segPool.segments)
+        self.__generate_ROC_table(None,stripePool,self._segPool.segments)
 
     def __generate_ROC_table(self,blSegs,stripePool,segPool):
 
@@ -169,51 +171,47 @@ class BamConverter:
                 stripe_seg.append(segPool[segID])
 
             return stripe_seg
+        def write_plot_data_to_file(sid_l,PPV_l):
+            if not os.path.exists("plot_data/PPV_data"):
+                os.makedirs("plot_data/PPV_data")
+            outfile = open("plot_data/PPV_data/ppv_data.txt",'wr')
+            outfile.write("#stripe id\tPPV\n")
+            for i in range(0,len(sid_l)):
+                outfile.write("{0}\t{1}\n".format(sid_l[i],PPV_l[i]))
+            outfile.close()
 
-        ROCTable = open("answers/ROC_table.txt", "w")
-        ROCTable.write("Stripe\tTP\tFP\tFN\tTN\tvariation id\n")
-        """
-        lineNum = 0
-        variation_1_l = []
-        variation_2_l = []
-        variation_3_l = []
-        variation_baseline = []
-        while 1:
-            line = answerFile.readline()
-            line = line.strip("\n")
-            lineNum+=1
-            if lineNum == 1:
-                continue
-            else:
-                chrom, start, end, sampleRead, referenceReads, gc,variation_id = line.split("\t")
-            if variation_id == str(1):
-                variation_1_l.append((start,end))
-            elif variation_id == str(2):
-                variation_2_l.append((start,end))
-            elif variation_id == str(3):
-                variation_3_l.append((start,end))
-            elif variation_id == "base_line":
-                variation_baseline.append((start,end))
-            if not line:
-                break
-        """
-        TP,FP,FN,TN = calculate_TP_FP_FN_TN(blSegs,segPool,"base_line")
-        print TP
-        print FP
-        print FN
-        print TN
-        print '\n'
+
+        stripe_id_l = []
+        PPV_l = [] # positive predictive value
 
         for stripe in stripePool.stripes:
             stripe_variation_id = decide_stripe_variation_id(stripe,segPool)
-            TP,NP,FN,TN = calculate_TP_FP_FN_TN(get_stripe_segs(stripe,segPool),segPool,stripe_variation_id)
+            TP,FP,FN,TN = calculate_TP_FP_FN_TN(get_stripe_segs(stripe,segPool),segPool,stripe_variation_id)
             print stripe.sid
             print stripe_variation_id
+            """
             print "TP:" + str(TP)
-            print "FP:" + str(FP)
+            print "FP:" + str(NP)
             print "FN:"+ str(FN)
             print "TN:" + str(TN)
             print '\n'
+            """
+            PPV = float(TP)/(float(TP) + float(FP))
+            print "PPV: {:.2%} ".format(PPV)
+            PPV_l.append(PPV)
+            stripe_id_l.append(stripe.sid)
+
+        write_plot_data_to_file(stripe_id_l,PPV_l)
+
+        #一下代码为尝试自己画这个直方图的代码
+        x = np.arange(len(stripe_id_l))
+        plt.bar(x,PPV_l,color = 'black')
+        plt.xticks(x,(str(x) for x in stripe_id_l),rotation=-70)
+        # plt.set_xticklabels(stripe_id_l,rotation=-70,fontsize = 12)
+        plt.ylabel('PPV',fontsize=12)
+        plt.xlabel('stripe_id',fontsize = 12)
+        plt.title('PPV for p-SCNAClonal\'s simulation data')
+        plt.show()
 
 
 
