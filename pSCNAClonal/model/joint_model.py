@@ -92,7 +92,8 @@ class JointModelTrainer(ModelTrainer):
         self.model_parameters.reinit_parameters(phi_init)
         ll_old = self.likelihood() # calculate the original log_likelihood
         iters = 0
-
+        phi_list = []
+        new_ll_list = []
         while not converged:  # loop until coverage
             self._E_step()  # E step
             self._M_step()  # M step
@@ -106,6 +107,12 @@ class JointModelTrainer(ModelTrainer):
                 ll_change = float('inf')
 
             self._print_running_info(ll_new, ll_old, ll_change, phi_init, iters)
+            phi = self.model_parameters.parameters['phi'].tolist()
+            if phi in phi_list:
+                new_ll_list[phi_list.index(phi)] = ll_new
+            else:
+                phi_list.append(phi)
+                new_ll_list.append(ll_new)
 
             ll_old = ll_new
 
@@ -127,6 +134,18 @@ class JointModelTrainer(ModelTrainer):
         model_parameters.copy_parameters(self.model_parameters)
         latent_variables = JointLatentVariables(self.stripePool, self.config_parameters)
         latent_variables.copy_latent_variables(self.latent_variables)
+
+        def write_to_file(phi_list,ll_new_list):
+            file = open("plot_data/mdoel_plot_data.txt","wr")
+            n = len(phi_list[0])
+            file.write("#Estimated subclone prevalence\t\t\tnew log likelihood\n")
+            for i in range(0,len(ll_new_list)):
+                for j in range(0,n):
+                    file.write(str(phi_list[i][j]) + "\t")
+                file.write(str(ll_new_list[i]) + "\n")
+            file.close()
+
+        write_to_file(phi_list,new_ll_list)
 
         return (ll_new, model_parameters, latent_variables)
 
@@ -347,8 +366,8 @@ class JointModelTrainer(ModelTrainer):
         phi_change = 1
 
         while phi_change > phi_stop:
-            phi_left = phi_start + (phi_end - phi_start)*1/3
-            phi_right = phi_start + (phi_end - phi_start)*2/3
+            phi_left = phi_start + (phi_end - phi_start)*1/10
+            phi_right = phi_start + (phi_end - phi_start)*9/10
 
             self.model_parameters.parameters['phi'][k] = phi_left
             ll_left = self.model_likelihood.complete_ll_by_subclone(self.model_parameters, self.latent_variables, k)

@@ -99,6 +99,10 @@ class BamConverter:
         self._get_baseline()
 
         stripePool = self._generate_stripe()
+
+
+        stripePool.stripeNum = len(stripePool.stripes)
+
         self._dump(stripePool, "stripePool.pkl")
         # self._dump_txt(stripePool, "stripePool.txt")
         self._dump(self._segPool, "segPool.pkl")
@@ -189,29 +193,12 @@ class BamConverter:
             TP,FP,FN,TN = calculate_TP_FP_FN_TN(get_stripe_segs(stripe,segPool),segPool,stripe_variation_id)
             print stripe.sid
             print stripe_variation_id
-            """
-            print "TP:" + str(TP)
-            print "FP:" + str(NP)
-            print "FN:"+ str(FN)
-            print "TN:" + str(TN)
-            print '\n'
-            """
             PPV = float(TP)/(float(TP) + float(FP))
             print "PPV: {:.2%} ".format(PPV)
             PPV_l.append(PPV)
             stripe_id_l.append(stripe.sid)
 
-        write_plot_data_to_file(stripe_id_l,PPV_l)
-
-        #一下代码为尝试自己画这个直方图的代码
-        x = np.arange(len(stripe_id_l))
-        plt.bar(x,PPV_l,color = 'black')
-        plt.xticks(x,(str(x) for x in stripe_id_l),rotation=-70)
-        # plt.set_xticklabels(stripe_id_l,rotation=-70,fontsize = 12)
-        plt.ylabel('PPV',fontsize=12)
-        plt.xlabel('stripe_id',fontsize = 12)
-        plt.title('PPV for p-SCNAClonal\'s simulation data')
-        plt.show()
+        # write_plot_data_to_file(stripe_id_l,PPV_l)
 
 
 

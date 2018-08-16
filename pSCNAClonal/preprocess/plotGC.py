@@ -287,10 +287,9 @@ class GCStripePoolPlot(GCStripePlot):
 
         # sampledSegs = np.random.choice(self.segments, self.n)
         sampledSegs = self.segments
-        x0 = np.array(map(lambda seg: seg.gc, sampledSegs))
+        x0 = np.array(map(lambda seg: seg.gc if seg != None else None,sampledSegs))
         y0 = np.array(map(lambda seg: np.log(seg.tReadNum + 1) -
-                          np.log(seg.nReadNum + 1), sampledSegs))
-
+                          np.log(seg.nReadNum + 1) if seg != None else None, sampledSegs))
         self.x = x0
         self.y = y0
 
@@ -299,7 +298,7 @@ class GCStripePoolPlot(GCStripePlot):
         colorVec = self.getColorVec()
 
         #Write the data to a txt file
-        writeToFile(x0, y0, colorVec)
+        #writeToFile(x0, y0, colorVec)
 
         pts = ax.scatter(x0, y0, s=self.area0, alpha=self.alpha0,
                          c=colorVec)
@@ -497,8 +496,8 @@ def plotMeanShift(sid, X, labels, cluster_centers):
         k_list.append(k)
         cluster_center_list.append(cluster_center[0])
 
-    writeToFile(sid,X_list,k_list)
-    writeCenterToFile(sid,cluster_center_list)
+    #writeToFile(sid,X_list,k_list)
+    #writeCenterToFile(sid,cluster_center_list)
     plt.title(str(sid) + ' estimated number of clusters: %d' % n_clusters_)
     plt.xlabel("BAF")
     plt.show()

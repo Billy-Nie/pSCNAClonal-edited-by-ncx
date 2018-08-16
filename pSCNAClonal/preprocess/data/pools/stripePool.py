@@ -50,7 +50,21 @@ class StripePool(object):
         # gsp = GCStripePlot(self.segPool.segments, 2000)
         # gsp.plot()
         self._aggregate(self._yDown, self._yUp, self.stripeNum, self.noiseStripeNum, byTag, plot)
+
         if plot:
+            # 以下代码为测试mdoel的代码，如果某一个stripe里面有一半的segment跑到了-0.5～0.1之间
+            index_to_be_deleted = []
+            """
+            for i in range(0,self.stripeNum):
+                y = np.log(self.stripes[i].tReadNum + 1) - np.log(self.stripes[i].nReadNum + 1)
+                if -0.5 <= y <= 0.1:
+                    index_to_be_deleted.append(i)
+
+            for i in range(len(self.stripes)-1,-1,-1):
+                if i in index_to_be_deleted:
+                    del self.stripes[i]
+            self.stripeNum = len(self.stripes)
+            """
             gspp = GCStripePoolPlot(self)
             gspp.plot()
 
@@ -109,7 +123,7 @@ class StripePool(object):
         clusters = hierarchy.fclusterdata(
             yFcd, stripeNum + noiseStripeNum, criterion="maxclust",method="complete")
 
-        writeToFile(self,clusters)
+        # writeToFile(self,clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
         # 此处获取最小和最大值之间的条带的方法是：直接去除这些位置不列入计算范围
