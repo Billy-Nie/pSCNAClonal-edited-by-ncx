@@ -111,9 +111,11 @@ VARPI = 0.8 ## gap parameters
 #############################
 
 YDOWN = -5
+# YDOWN = -1.2
 YUP = 5
-# STRIPENUM = 6
-STRIPENUM = 3
+# YUP = 1.37
+STRIPENUM = 6
+#STRIPENUM = 3
 NOISESTRIPENUM = 0
 
 

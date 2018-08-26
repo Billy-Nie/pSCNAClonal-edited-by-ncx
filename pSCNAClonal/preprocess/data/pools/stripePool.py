@@ -52,19 +52,20 @@ class StripePool(object):
         self._aggregate(self._yDown, self._yUp, self.stripeNum, self.noiseStripeNum, byTag, plot)
 
         if plot:
-            # 以下代码为测试mdoel的代码，如果某一个stripe里面有一半的segment跑到了-0.5～0.1之间
+            # 以下代码为测试model的代码，如果某一个stripe里面有一半的segment跑到了-0.5～0.1之间
             index_to_be_deleted = []
-            """
-            for i in range(0,self.stripeNum):
+            for i in range(0, self.stripeNum):
                 y = np.log(self.stripes[i].tReadNum + 1) - np.log(self.stripes[i].nReadNum + 1)
+                self.stripes[i].y = y
                 if -0.5 <= y <= 0.1:
                     index_to_be_deleted.append(i)
 
-            for i in range(len(self.stripes)-1,-1,-1):
+            for i in range(len(self.stripes) - 1, -1, -1):
                 if i in index_to_be_deleted:
                     del self.stripes[i]
             self.stripeNum = len(self.stripes)
-            """
+
+
             gspp = GCStripePoolPlot(self)
             gspp.plot()
 
@@ -75,8 +76,8 @@ class StripePool(object):
                 "nReadNum", "tag"))
 
             for s in self.stripes:
-                aT = s.pairedCounts[:,2]
-                bT = s.pairedCounts[:,3]
+                aT = s.pairedCounts[:, 2]
+                bT = s.pairedCounts[:, 3]
                 aTstrl = np.array_str(aT).strip("[]").split()
                 bTstrl = np.array_str(bT).strip("[]").split()
 
@@ -90,22 +91,23 @@ class StripePool(object):
                     s.nReadNum,
                     s.tag))
 
-    def _aggregate(self, yDown, yUp, stripeNum, noiseStripeNum=2, byTag=False,plot=True):
+    def _aggregate(self, yDown, yUp, stripeNum, noiseStripeNum=2, byTag=False, plot=True):
         """The aggregation operations for segments in data
         :returns: stripes data structure
         """
         assert stripeNum > 0
-        def writeToFile(self,cluster):
+
+        def writeToFile(self, cluster):
             segments = self.segPool.segments
-            x = np.array(map(lambda seg:seg.gc,segments))
+            x = np.array(map(lambda seg: seg.gc, segments))
             y = np.array(map(lambda seg: np.log(seg.tReadNum + 1) -
-                                          np.log(seg.nReadNum + 1), segments))
+                                         np.log(seg.nReadNum + 1), segments))
             if not os.path.exists("plot_data/aggregate_data"):
                 os.makedirs("plot_data/aggregate_data")
             outFile = open("plot_data/aggregate_data/aggregate_data.txt", "wr")
             outFile.write("#x\ty\tstripe\n")
-            for i in range(0,len(cluster)):
-                outFile.write("{0}\t{1}\t{2}\n".format(x[i],y[i],cluster[i]))
+            for i in range(0, len(cluster)):
+                outFile.write("{0}\t{1}\t{2}\n".format(x[i], y[i], cluster[i]))
             outFile.close()
 
         rdRaioLog = []
@@ -121,9 +123,9 @@ class StripePool(object):
 
         yFcd = ycV.reshape(ycV.shape[0], 1)
         clusters = hierarchy.fclusterdata(
-            yFcd, stripeNum + noiseStripeNum, criterion="maxclust",method="complete")
+            yFcd, stripeNum + noiseStripeNum, criterion="maxclust", method="complete")
 
-        # writeToFile(self,clusters)
+        writeToFile(self, clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
         # 此处获取最小和最大值之间的条带的方法是：直接去除这些位置不列入计算范围
@@ -134,10 +136,10 @@ class StripePool(object):
 
         for cId, _ in mccs:
             # 对每一个条带进行裂解操作，生成子条带, return
-            self._decompose(cId, clusters, statusYcV, False,plot)
+            self._decompose(cId, clusters, statusYcV, False, plot)
         self.stripeNum = len(self.stripes)
 
-    def _decompose(self, cId, clusters, statusYcV, byTag=False,plot=True):
+    def _decompose(self, cId, clusters, statusYcV, byTag=False, plot=True):
         """The decomposition operations for segments in data
 
         :parameters: TODO
@@ -185,11 +187,11 @@ class StripePool(object):
                     subSegL, subSegIdxL = map(list, zip(*tempL))
                     tempStripe = Stripe()
                     tempStripe.name = "{0}_{1}_{2}".format(str(cId),
-                                                            tempTag,
-                                                            str(tagIdx))
+                                                           tempTag,
+                                                           str(tagIdx))
                     tempStripe.sid = "{0}_{1}_{2}".format(str(cId),
-                                                            tempTag,
-                                                            str(tagIdx))
+                                                          tempTag,
+                                                          str(tagIdx))
 
                     tempStripe.init_segs(subSegL, subSegIdxL)
                     tempStripe.tag = tempTag
@@ -218,12 +220,12 @@ class StripePool(object):
                         tagIdx = 0
                         if "BASELINE" == tempTag:
                             continue
-                        tempL = [(seg,idx) for seg, idx in zip(segL,segIdxL)
+                        tempL = [(seg, idx) for seg, idx in zip(segL, segIdxL)
                                  if seg.tag == tempTag]
-                        subSegL, subSegIdxL = map(list. zip(*tempL))
+                        subSegL, subSegIdxL = map(list.zip(*tempL))
                         tempStripe = Stripe()
-                        tempStripe.name = "{0}_{1}_{2}".format(str(cId),tempTag,str(tagIdx))
-                        tempStripe.init_segs(subSegL,subSegIdxL)
+                        tempStripe.name = "{0}_{1}_{2}".format(str(cId), tempTag, str(tagIdx))
+                        tempStripe.init_segs(subSegL, subSegIdxL)
                         tempStripe.tag = tempTag
                         self.stripes.append(tempStripe)
                         tagIdx = tagIdx + 1
@@ -241,8 +243,6 @@ class StripePool(object):
                     return
                 """
 
-
-
                 y = np.ones(pT.shape)
                 pTy = np.hstack((pT, y))
                 bandwidth = estimate_bandwidth(pTy, quantile=0.2, n_samples=500)
@@ -253,8 +253,25 @@ class StripePool(object):
                 labels = ms.labels_
                 clusterCenters = ms.cluster_centers_
 
+
                 if plot:
-                    plotMeanShift(cId,pTy, labels, clusterCenters)
+                    # TODO : 记得注释掉以下四行
+                    #if cId == 1:
+                    #    for i in range(len(clusterCenters)):
+                    #        if abs(0.5 - clusterCenters[i][0]) < 0.05:
+                    #            clusterCenter = clusterCenters[i]
+                    #            clusterCenters = np.delete(clusterCenters, i, 0)
+                    #            index = np.argwhere(labels == i)
+                    #            labels = np.delete(labels, index)
+                    #            index = np.argwhere(labels == (i + 1))
+                    #            for j in index:
+                    #                labels[j] = labels[j] - 1
+                    #            for j in range(len(pTy)):
+                    #               if (clusterCenter == pTy[j]).all():
+                    #                    index = j
+                    #            pTy = np.delete(pTy, index, 0)
+                    #            break
+                    plotMeanShift(cId, pTy, labels, clusterCenters)
 
                 segLabelL = [
                     self._getSegLabl(seg, clusterCenters) for seg in segL
@@ -283,31 +300,30 @@ class StripePool(object):
                             if "BASELINE" == tempTag:
                                 continue
                             subSubTempL = [(seg, idx) for seg, idx in subTempL if
-                                            seg.tag == tempTag ]
+                                           seg.tag == tempTag]
                             subSubSegL, subSubSegIdxL = map(list, zip(*subSubTempL))
                             tempStripe = Stripe()
                             tempStripe.name = "{0}_{1}_{2}_{3}".format(str(cId),
-                                                                    label,
-                                                                    tempTag,
-                                                                    str(tagIdx))
+                                                                       label,
+                                                                       tempTag,
+                                                                       str(tagIdx))
                             tempStripe.sid = "{0}_{1}_{2}_{3}".format(str(cId),
-                                                                    label,
-                                                                    tempTag,
-                                                                    str(tagIdx))
+                                                                      label,
+                                                                      tempTag,
+                                                                      str(tagIdx))
 
                             tempStripe.init_segs(subSubSegL, subSubSegIdxL)
                             tempStripe.tag = tempTag
                             self.stripes.append(tempStripe)
                             tagIdx = tagIdx + 1
 
-
         # merge baseline, or not baseline in the stripe? toggle
         #  TODO: check out
-        if False and byTag: # TODO : always False ?
+        if False and byTag:  # TODO : always False ?
             blSegL = [seg for seg in self.segPool.segments if "BASELINE" ==
-                    seg.tag]
+                      seg.tag]
             blSegIdxL = [idx for idx, seg in enumerate(self.segPool.segments) if "BASELINE" ==
-                    seg.tag]
+                         seg.tag]
             tempStripe = Stripe()
             tempStripe.sid = "{0}_{1}_{2}".format(str(-1), str(idx), "BASELINE")
             tempStripe.init_segs(blSegL, blSegIdxL)

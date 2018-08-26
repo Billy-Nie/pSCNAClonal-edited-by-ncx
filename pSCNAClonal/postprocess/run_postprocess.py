@@ -27,30 +27,53 @@ from pSCNAClonal.model import model_base,joint_model
 
 
 def run_postprocess(args):
+
     file_name = args.output_file_base + ".pSCNAClonal.output.pkl"
     infile = open(file_name,'rb')
 
     trainer = pkl.load(infile)
     stripePool = trainer.stripePool
-    config_parameters = trainer.config_parameters
-    model_parameters = trainer.model_parameters
-    latent_variables = trainer.latent_variables
-    ll = trainer.ll
-
-    extract_paired_counts(stripePool,args.output_file_base)
-    extract_stripes(stripePool, args.output_file_base)
-
-    if PLT_AVAIL:
-        extract_BAFheatmap(stripePool,args.output_file_base)
-        extract_stripe_plot(stripePool, args.output_file_base)
-    else:
-        print "matplotlib.pyplot not available, skip plotting..."
-        sys.stdout.flush()
-
-    extract_summary(model_parameters,config_parameters,ll,args.output_file_base)
-
+    extract_postprocess_table(stripePool.stripes, stripePool.segPool.segments, True)
     infile.close()
 
+
+def extract_postprocess_table(stripes, segments, simulation_flag):
+    if not os.path.exists("postprocess"):
+        os.makedirs("postprocess")
+    outputFile = open("postprocess/postprocess_table.txt", "wr")
+    if simulation_flag:
+        outputFile.write(
+            "chrom\tstart\tend\tnReadNum\ttReadNum\tcopy_number_predict\tphi_predict\tstripe id\tcopy_number_real\tphi_real\n")
+        for i in range(len(segments)):
+            segment = segments[i]
+            outputFile.write("{0}\t{1}\t{2}\t{3}\t{4}\t".format(segment.chromName, segment.start, segment.end, segment.nReadNum, segment.tReadNum))
+            baseline = True
+            for j in range(len(stripes)):
+                if i in stripes[j].segsIdxL:
+                    outputFile.write("{0}\t{1}\t{2}\t".format(stripes[j].copyNumber, stripes[j].phi,stripes[j].sid))
+                    baseline = False
+            if baseline:
+                outputFile.write("{0}\t{1}\tbaseline\t".format(2, 1))
+
+            if segment.start >= 210682863 and segment.end <= 210782863:
+                outputFile.write("3\t0.9\n")
+            elif segment.start >= 152728665 and segment.end <= 152828665:
+                outputFile.write("0\t0.8\n")
+            elif segment.start >= 152829765 and segment.end <= 153029765:
+                outputFile.write("2\t1\n")
+    else:
+        outputFile.write("chrom\tstart\tend\tnReadNum\ttReadNum\tcopy_number_predict\tphi_predict\n")
+        for i in range(len(segments)):
+            segment = segments[i]
+            outputFile.write("{0}\t{1}\t{2}\t{3}\t{4}\t".format(segment.chromName, segment.start, segment.end, segment.nReadNum, segment.tReadNum))
+            for j in range(len(stripes)):
+                if i in stripes[j].segsIdxL:
+                    outputFile.write("{0}\t{1}\t".format(stripes[j].copyNumber, stripes[j].phi))
+
+    outputFile.close()
+
+
+"""
 def extract_paired_counts(stripePool, output_file_base):
     counts_file_name = output_file_base + ".pSCNAClonal.counts"
     outfile = open(counts_file_name,'w')
@@ -86,6 +109,7 @@ def extract_stripes(stripePool, output_file_base):
 
     outfile.close()
 
+
 def extract_BAFheatmap(stripePool,output_file_base):
     BAF_counts_min = constants.BAF_COUNTS_MIN
     BAF_counts_max = constants.BAF_COUNTS_MAX
@@ -119,6 +143,7 @@ def extract_BAFheatmap(stripePool,output_file_base):
         plt.savefig('./' + outheatmap_dir_name + '/' + seg_name_j, bbox_inches='tight')
 
 
+
 def extract_stripe_plot(stripePool, output_file_base):
     subclone_plot_file_name = output_file_base + '.pSCNAClonal.stripePlot.png'
 
@@ -129,10 +154,11 @@ def extract_stripe_plot(stripePool, output_file_base):
     print "Extracting stripe plot file"
     sys.stdout.flush()
 
+    #TODO:这里这个baseline以及subclone_prev要怎么改？
     for j in range(0,stripe_num):
-        if stripePool.segPool.segments[j].baselineLabel == True or stripePool.segPool.stripes[j].genotype == 'PM':
+        if stripePool.segPool.segments[j].baselineLabel == True or stripePool.stripes[j].genotype == 'PM':
             continue
-        subclone_prev_lst.append(stripePool.stripes[j].subclone_prev)
+        subclone_prev_lst.append(stripePool.stripes[j].phi)
         copynumber_lst.append(stripePool.stripes[j].copyNumber)
 
     X = len(subclone_prev_lst)
@@ -146,6 +172,8 @@ def extract_stripe_plot(stripePool, output_file_base):
     plt.xticks(sp.linspace(1,X,X),copynumber_lst)
     plt.yticks(sp.linspace(0,1,11),['0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'])
     plt.savefig(subclone_plot_file_name,bbox_inches='tight')
+"""
+
 
 
 

@@ -123,6 +123,7 @@ class GCStripePlot():
         pts = ax.scatter(x0, y0, s=self.area0, alpha=self.alpha0, color="b")
         ax.set_xlabel("GC content")
         ax.set_ylabel(r'$\log(D^T/D^N)$')
+        ax.set_ylim(-0.5, 1.5)
         plt.subplots_adjust(bottom=0.45)
 
         A = np.vstack([x0, np.ones(len(x0))]).T
@@ -246,6 +247,8 @@ class GCStripePlot():
 
         button_exit.on_clicked(ok_exit)
 
+        #plt.ylim(-0.5,1.5)
+
         plt.show()
 
 
@@ -281,15 +284,15 @@ class GCStripePoolPlot(GCStripePlot):
             outputFile = open("plot_data/decompose_plot_data/decompose_data.txt","wr")
             outputFile.write("#{0}\t{1}\t{2}\n".format("x coordinate","y coordinate", "class"))
             for i in range(0,len(x)):
-                outputFile.write("{0}\t{1}\t{2}\n".format(x[i],y[i],colorVec[i]))
+                outputFile.write("{0}\t{1}\t{2}\n".format(x[i], y[i], colorVec[i]))
             outputFile.close()
-
 
         # sampledSegs = np.random.choice(self.segments, self.n)
         sampledSegs = self.segments
-        x0 = np.array(map(lambda seg: seg.gc if seg != None else None,sampledSegs))
+        x0 = np.array(map(lambda seg: seg.gc, sampledSegs))
         y0 = np.array(map(lambda seg: np.log(seg.tReadNum + 1) -
-                          np.log(seg.nReadNum + 1) if seg != None else None, sampledSegs))
+                          np.log(seg.nReadNum + 1), sampledSegs))
+
         self.x = x0
         self.y = y0
 
@@ -298,13 +301,14 @@ class GCStripePoolPlot(GCStripePlot):
         colorVec = self.getColorVec()
 
         #Write the data to a txt file
-        #writeToFile(x0, y0, colorVec)
+        writeToFile(x0, y0, colorVec)
 
         pts = ax.scatter(x0, y0, s=self.area0, alpha=self.alpha0,
                          c=colorVec)
 
         ax.set_xlabel("GC content")
         ax.set_ylabel(r'$\log(D^T/D^N)$')
+        # ax.set_ylim(-1.5, 1.5)
         plt.subplots_adjust(bottom=0.45)
 
         A = np.vstack([x0, np.ones(len(x0))]).T
@@ -496,8 +500,8 @@ def plotMeanShift(sid, X, labels, cluster_centers):
         k_list.append(k)
         cluster_center_list.append(cluster_center[0])
 
-    #writeToFile(sid,X_list,k_list)
-    #writeCenterToFile(sid,cluster_center_list)
+    writeToFile(sid,X_list,k_list)
+    writeCenterToFile(sid,cluster_center_list)
     plt.title(str(sid) + ' estimated number of clusters: %d' % n_clusters_)
     plt.xlabel("BAF")
     plt.show()

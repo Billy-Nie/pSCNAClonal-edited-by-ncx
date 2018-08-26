@@ -130,7 +130,7 @@ class BamConverter:
             variation_3 = 0
             variation_baseline = 0
             for segsidx in stripe.segsIdxL:
-                seg_variation_id =decide_veriation_id(segPool[segsidx])
+                seg_variation_id = decide_veriation_id(segPool[segsidx])
                 if seg_variation_id == 2:
                     variation_2 += 1
                 elif seg_variation_id == 1:
@@ -175,16 +175,21 @@ class BamConverter:
                 stripe_seg.append(segPool[segID])
 
             return stripe_seg
-        def write_plot_data_to_file(sid_l,PPV_l):
+        def write_plot_data_to_file(sid_l,PPV_l,type_l):
             if not os.path.exists("plot_data/PPV_data"):
                 os.makedirs("plot_data/PPV_data")
             outfile = open("plot_data/PPV_data/ppv_data.txt",'wr')
+            outfile2 = open("plot_data/PPV_data/ppv_type.txt", "wr")
+            outfile2.write("#stripe id\ttype\n")
             outfile.write("#stripe id\tPPV\n")
             for i in range(0,len(sid_l)):
                 outfile.write("{0}\t{1}\n".format(sid_l[i],PPV_l[i]))
+                outfile2.write("{0}\t{1}\n".format(sid_l[i],type_l[i]))
             outfile.close()
+            outfile2.close()
 
 
+        type_l = []
         stripe_id_l = []
         PPV_l = [] # positive predictive value
 
@@ -197,8 +202,9 @@ class BamConverter:
             print "PPV: {:.2%} ".format(PPV)
             PPV_l.append(PPV)
             stripe_id_l.append(stripe.sid)
+            type_l.append(stripe_variation_id)
 
-        # write_plot_data_to_file(stripe_id_l,PPV_l)
+        write_plot_data_to_file(stripe_id_l,PPV_l,type_l)
 
 
 

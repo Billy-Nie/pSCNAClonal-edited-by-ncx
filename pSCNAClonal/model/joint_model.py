@@ -145,7 +145,7 @@ class JointModelTrainer(ModelTrainer):
                 file.write(str(ll_new_list[i]) + "\n")
             file.close()
 
-        write_to_file(phi_list,new_ll_list)
+        #write_to_file(phi_list,new_ll_list)
 
         return (ll_new, model_parameters, latent_variables)
 

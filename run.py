@@ -93,7 +93,7 @@ parserModel.set_defaults(func=run_model)
 ###########################
 parser_postprocess = subparsers.add_parser('postprocess',help='Extract various result files from the outputfile')
 
-parser_postprocess.add_argument('--output_file_base', default='postprocess_output', help='Base name of the output file to be created')
+parser_postprocess.add_argument('--output_file_base', default='model_result', help='Base name of the output file to be created')
 
 parser_postprocess.set_defaults(func=run_postprocess)
 

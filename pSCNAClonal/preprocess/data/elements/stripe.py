@@ -53,6 +53,8 @@ class Stripe:
         # phi应该放在node结点中
         self.phi = 0.0
 
+        #TODO : DENUG ONLY DELETE IT!
+        self.y = None
 
         #self.tssb = None
         #self.node = None  # this is the node where the datum resides
