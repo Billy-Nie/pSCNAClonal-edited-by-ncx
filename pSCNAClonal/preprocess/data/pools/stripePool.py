@@ -52,20 +52,6 @@ class StripePool(object):
         self._aggregate(self._yDown, self._yUp, self.stripeNum, self.noiseStripeNum, byTag, plot)
 
         if plot:
-            # 以下代码为测试model的代码，如果某一个stripe里面有一半的segment跑到了-0.5～0.1之间
-            index_to_be_deleted = []
-            for i in range(0, self.stripeNum):
-                y = np.log(self.stripes[i].tReadNum + 1) - np.log(self.stripes[i].nReadNum + 1)
-                self.stripes[i].y = y
-                if -0.5 <= y <= 0.1:
-                    index_to_be_deleted.append(i)
-
-            for i in range(len(self.stripes) - 1, -1, -1):
-                if i in index_to_be_deleted:
-                    del self.stripes[i]
-            self.stripeNum = len(self.stripes)
-
-
             gspp = GCStripePoolPlot(self)
             gspp.plot()
 
@@ -105,7 +91,7 @@ class StripePool(object):
             if not os.path.exists("plot_data/aggregate_data"):
                 os.makedirs("plot_data/aggregate_data")
             outFile = open("plot_data/aggregate_data/aggregate_data.txt", "wr")
-            outFile.write("#x\ty\tstripe\n")
+            outFile.write("X\tY\tC\n")
             for i in range(0, len(cluster)):
                 outFile.write("{0}\t{1}\t{2}\n".format(x[i], y[i], cluster[i]))
             outFile.close()
@@ -125,7 +111,29 @@ class StripePool(object):
         clusters = hierarchy.fclusterdata(
             yFcd, stripeNum + noiseStripeNum, criterion="maxclust", method="complete")
 
-        writeToFile(self, clusters)
+        def get_cluster_centers(clusters, ycv):
+            clusters_unique = np.unique(clusters)
+            cluster_centers = []
+            for i in clusters_unique:
+                i = int(i)
+                index = np.where(clusters == i)
+                sum = 0.0
+                for j in index[0]:
+                    sum += ycv[j]
+                aver = sum / len(index[0])
+                cluster_centers.append(aver)
+            return cluster_centers
+        if plot:
+            cluster_centers = get_cluster_centers(clusters,ycV)
+            #寻找和0最接近的那一个center，标记其中的segment为baseline
+            tempCluster = 0
+            for key in range(len(cluster_centers)):
+                if (cluster_centers[key] - 0) <= (cluster_centers[tempCluster] - 0):
+                    tempCluster = key
+            index = np.where(clusters == tempCluster)
+            for i in index[0]:
+                self.segPool.segments[i].tag = "BASELINE"
+            writeToFile(self, clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
         # 此处获取最小和最大值之间的条带的方法是：直接去除这些位置不列入计算范围
@@ -255,22 +263,6 @@ class StripePool(object):
 
 
                 if plot:
-                    # TODO : 记得注释掉以下四行
-                    #if cId == 1:
-                    #    for i in range(len(clusterCenters)):
-                    #        if abs(0.5 - clusterCenters[i][0]) < 0.05:
-                    #            clusterCenter = clusterCenters[i]
-                    #            clusterCenters = np.delete(clusterCenters, i, 0)
-                    #            index = np.argwhere(labels == i)
-                    #            labels = np.delete(labels, index)
-                    #            index = np.argwhere(labels == (i + 1))
-                    #            for j in index:
-                    #                labels[j] = labels[j] - 1
-                    #            for j in range(len(pTy)):
-                    #               if (clusterCenter == pTy[j]).all():
-                    #                    index = j
-                    #            pTy = np.delete(pTy, index, 0)
-                    #            break
                     plotMeanShift(cId, pTy, labels, clusterCenters)
 
                 segLabelL = [
@@ -289,6 +281,22 @@ class StripePool(object):
                     subSegL, subSegIdxL = map(list, zip(*subTempL))
 
                     if not byTag:
+                        #删掉标记为BASELINE的segment
+                        segs_to_be_deleted = []
+                        for i in range(0,len(subSegL)):
+                            if subSegL[i].tag == "BASELINE":
+                                segs_to_be_deleted.append(i)
+
+                        for i in range(len(subSegL) - 1,-1,-1):
+                            if i in segs_to_be_deleted:
+                               del  subSegL[i]
+
+                        for i in range(len(subSegIdxL) - 1,-1,-1):
+                            if i in segs_to_be_deleted:
+                                del subSegIdxL[i]
+                        if len(subSegL) <= 0:
+                            continue
+
                         tempStripe = Stripe()
                         tempStripe.sid = "{0}_{1}".format(str(cId), str(label))
                         tempStripe.init_segs(subSegL, subSegIdxL)

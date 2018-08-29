@@ -244,7 +244,7 @@ class BamConverter:
 
         tempSP = StripePool(self._segPool, self._segPool.baseline, yDown, yUp,
                             stripeNum, noiseStripeNum)
-        tempSP.get(byTag = False)
+        tempSP.get(byTag = False, plot= True)
 
         for idx, sp in enumerate(tempSP.stripes):
             tempSP.stripes[idx].id = idx

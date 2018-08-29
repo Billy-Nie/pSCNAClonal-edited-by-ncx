@@ -166,8 +166,8 @@ class SegmentPool:
         tempSP = StripePool(self, self.baseline, yDown, yUp, stripeNum, noiseStripeNum)
         tempSP.get(False, False)
 
+        """
         # 从条带中找到与基线最接近的条带作为基线条带
-
         self.nReadNum = -1.0
         self.tReadNum = -1.0
 
@@ -185,6 +185,7 @@ class SegmentPool:
 
         for idx in targetSP.segsIdxL:
             self.segments[idx].tag = "BASELINE"
+        """
 
     def _calc_baseline(self, maxCopyNumber, subcloneNum, isPreprocess=False):
         """
