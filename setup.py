@@ -12,5 +12,5 @@ setup(
                 'pSCNAClonal.preprocess',
                 'pSCNAClonal.model',
                 'pSCNAClonal.postprocess'],
-      scripts=['run.py']
+      scripts=['pSCNAClonal.py']
      )
