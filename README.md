@@ -20,18 +20,12 @@ pSCNAClonal is a comprehensive software package to study the subclonal structure
 
 Although not mandatory, Linux system is recommended. Also, [samtools](http://samtools.sourceforge.net/) is not required by pSCNAClonal, but can be useful for creating bam, bam index and fasta index files which are required by the pysam module of pSCNAClonal.
 
-### Install from source
+### Clone and prepare
 You may install pSCNAClonal using the following commands
 
 ```
 $ git clone https://github.com/Billy-Nie/pSCNAClonal /the/directory/you/want/to/clone
 $ cd /the/directory/you/want/to/clone
-$ python setup.py install
-```
-
-If you prefer to install MixClone other than the default directory, you can also use this command:
-```
-$ python setup.py install --prefix /your/directory/
 ```
 
 There's also a bin/ folder under pSCNAClonal. The bin/ folder contains some useful R code for better visualizing some useful informations.
@@ -100,6 +94,8 @@ $ pSCNAClonal.py postprocess --output_file_base OUTPUT_BASENAME
 ```
 
 **BASENAME** The base name of the output file created in the model step.
+
+
 
 
 
