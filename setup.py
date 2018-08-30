@@ -7,7 +7,7 @@ setup(
       author='Chu Yanshuo, Nie Chenxi',
       author_email='yanshuochu@hit.edu.cn, 1160300507@stu.hit.edu.cn',
       url='https://github.com/Billy-Nie/p-scnaclonal',
-      package_dir={'': 'lib'},
+      #package_dir={'': 'lib'},
       packages=['pSCNAClonal',
                 'pSCNAClonal.preprocess',
                 'pSCNAClonal.model',
