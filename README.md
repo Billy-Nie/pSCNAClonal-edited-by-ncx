@@ -65,9 +65,43 @@ $ pSCNAClonal.py preprocess  --nBamName NORMAL.bam --tBameName TUMOUR.bam --bedN
 
 **--pathPrefix**:Base name of the preprocessed output file to be created
 
-**--subcloneNum**:subclone number
+**--minDepth**:Minimum depth in both normal and tumor sample required to use a site in the analysis
 
-**
+**--minBqual**: Minimum base quality required for each base
+
+**--minMqual**: Minimum mapping quality required for each base
+
+**--process_num**: Number of processes to launch for preprocessing
+
+**--gcCorrectionMethod**:The gc correction method, one of auto and visual
+
+### Model
+After the preprocessed input file is created, we can run the probabilistic model of pSCNAClonal by execute:
+```
+$ pSCNAClonal.py model --pklPath /the/path/to/preprocessed/file --output_filename_base OUTPUT_BASENAME --max_copynumber 6 --subclone_num 2 --max_iters 30 --stop_value 1e-6
+```
+
+**--pklPath** the path to preprocessed pkl file
+
+**OUTPUT_BASENAME** The base name of the output file with model parameters estimated to be created.
+
+**--max_copynumber** The maximum copy number of each segment allows to take.
+
+**--subclone_num** The number of subclones within the tumor sample. If not provided, go through [1, 5] and select the most likely model.
+
+**--max_iters** Maximum number of iterations for training.
+
+**--stop_value** Stop value of the EM algorithm for training. If the change of log-likelihood is lower than this value, stop training.
+
+### Postprocess
+After the output file with model parameters estimated, we can run postprocess to extract various attribute from stripePool by execute:
+```
+$ pSCNAClonal.py postprocess --output_file_base OUTPUT_BASENAME
+```
+
+**BASENAME** The base name of the output file created in the model step.
+
+
 
 
 
