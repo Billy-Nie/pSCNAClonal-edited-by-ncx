@@ -109,30 +109,12 @@ class StripePool(object):
 
         yFcd = ycV.reshape(ycV.shape[0], 1)
         clusters = hierarchy.fclusterdata(
-            yFcd, stripeNum + noiseStripeNum, criterion="maxclust", method="complete")
+            yFcd, stripeNum + noiseStripeNum, criterion="maxclust",
+            method="complete")
 
-        def get_cluster_centers(clusters, ycv):
-            clusters_unique = np.unique(clusters)
-            cluster_centers = []
-            for i in clusters_unique:
-                i = int(i)
-                index = np.where(clusters == i)
-                sum = 0.0
-                for j in index[0]:
-                    sum += ycv[j]
-                aver = sum / len(index[0])
-                cluster_centers.append(aver)
-            return cluster_centers
+        baselineCluster, _ = self.__get_baseline_from_stripe(self, clusters, ycV)
+
         if plot:
-            cluster_centers = get_cluster_centers(clusters,ycV)
-            #寻找和0最接近的那一个center，标记其中的segment为baseline
-            tempCluster = 0
-            for key in range(len(cluster_centers)):
-                if (cluster_centers[key] - 0) <= (cluster_centers[tempCluster] - 0):
-                    tempCluster = key
-            index = np.where(clusters == tempCluster)
-            for i in index[0]:
-                self.segPool.segments[i].tag = "BASELINE"
             writeToFile(self, clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
@@ -143,9 +125,80 @@ class StripePool(object):
             clusters[statusYcV]).most_common(stripeNum + noiseStripeNum)
 
         for cId, _ in mccs:
+            # 此处去除baseline
+            if cId == baselineCluster:
+                continue
             # 对每一个条带进行裂解操作，生成子条带, return
             self._decompose(cId, clusters, statusYcV, False, plot)
+
         self.stripeNum = len(self.stripes)
+
+    def get_baseline_segs():
+        """
+        Get baseline segments, given the baseline value
+        """
+
+        yDown, yUp, stripeNum, noiseStripeNum =self._yDown, self._yUp,\
+            self.stripeNum, self.noiseStripeNum
+
+        assert stripeNum > 0
+
+        rdRaioLog = []
+
+        # here should keep idx
+        ycV = np.array([
+            np.log(seg.tReadNum + 1) - np.log(seg.nReadNum + 1)
+            for seg in self.segPool.segments
+        ])
+
+        # 记录是否是outlier
+        statusYcV = np.logical_and(ycV > yDown, ycV < yUp)
+
+        yFcd = ycV.reshape(ycV.shape[0], 1)
+        clusters = hierarchy.fclusterdata(
+            yFcd, stripeNum + noiseStripeNum, criterion="maxclust",
+            method="complete")
+
+        _, blSegL = self.__get_baseline_from_stripe(self, clusters, ycV)
+        # writeToFile(self,clusters)
+
+        return blSegL
+
+    def __get_baseline_from_stripe(self, clusters, ycV):
+        """
+        Get baseline segments in the aggregation step
+        for the sake of
+        the more the stripe approaches to baseline stripe, the smaller the gap
+        it is
+        """
+        def get_cluster_centers(clusters, ycv):
+            clustersUnique = np.unique(clusters)
+            clusterCenters = {}
+            for i in clustersUnique:
+                index = np.where(clusters == i)
+                clusterCenters[i] = np.mean(ycv[index[0]])
+            return clusterCenters
+
+        clusterCenters = get_cluster_centers(clusters, ycV)
+
+        #寻找和baseline最接近的那一个center，标记其中的segment为baseline
+        mostClosedCluster = 0
+        minDis = float("Inf")
+
+        for key in clusterCenters.keys():
+            tempDis = np.abs(self.baseline - clusterCenters[key])
+            if minDis > tempDis:
+                tempDis = tempDis
+                mostClosedCluster = key
+
+        index = np.where(clusters == tempCluster)
+        for i in index[0]:
+            self.segPool.segments[i].tag = "BASELINE"
+
+        blSegL = filter(lambda item:item.tag == "BASELINE", self.segments)
+
+        return mostClosedCluster, blSegL
+
 
     def _decompose(self, cId, clusters, statusYcV, byTag=False, plot=True):
         """The decomposition operations for segments in data
@@ -227,6 +280,8 @@ class StripePool(object):
                     for tempTag in tempTags:
                         tagIdx = 0
                         if "BASELINE" == tempTag:
+                            raise Exception("Got baseline in decomposion\
+                                            step!")
                             continue
                         tempL = [(seg, idx) for seg, idx in zip(segL, segIdxL)
                                  if seg.tag == tempTag]
@@ -281,19 +336,19 @@ class StripePool(object):
                     subSegL, subSegIdxL = map(list, zip(*subTempL))
 
                     if not byTag:
-                        #删掉标记为BASELINE的segment
-                        segs_to_be_deleted = []
-                        for i in range(0,len(subSegL)):
-                            if subSegL[i].tag == "BASELINE":
-                                segs_to_be_deleted.append(i)
+                        # 删掉标记为BASELINE的segment
+                        # segs_to_be_deleted = []
+                        # for i in range(0,len(subSegL)):
+                            # if subSegL[i].tag == "BASELINE":
+                                # segs_to_be_deleted.append(i)
 
-                        for i in range(len(subSegL) - 1,-1,-1):
-                            if i in segs_to_be_deleted:
-                               del  subSegL[i]
+                        # for i in range(len(subSegL) - 1,-1,-1):
+                            # if i in segs_to_be_deleted:
+                               # del  subSegL[i]
 
-                        for i in range(len(subSegIdxL) - 1,-1,-1):
-                            if i in segs_to_be_deleted:
-                                del subSegIdxL[i]
+                        # for i in range(len(subSegIdxL) - 1,-1,-1):
+                            # if i in segs_to_be_deleted:
+                                # del subSegIdxL[i]
                         if len(subSegL) <= 0:
                             continue
 
@@ -305,8 +360,12 @@ class StripePool(object):
                         tempTags = set([seg.tag for seg in subSegL])
                         for tempTag in tempTags:
                             tagIdx = 0
+
                             if "BASELINE" == tempTag:
+                                raise Exception("Got baseline in decomposion\
+                                                step!")
                                 continue
+
                             subSubTempL = [(seg, idx) for seg, idx in subTempL if
                                            seg.tag == tempTag]
                             subSubSegL, subSubSegIdxL = map(list, zip(*subSubTempL))
