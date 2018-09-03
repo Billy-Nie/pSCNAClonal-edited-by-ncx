@@ -112,7 +112,7 @@ class StripePool(object):
             yFcd, stripeNum + noiseStripeNum, criterion="maxclust",
             method="complete")
 
-        baselineCluster, _ = self.__get_baseline_from_stripe(self, clusters, ycV)
+        baselineCluster, _ = self.__get_baseline_from_stripe(clusters, ycV)
 
         if plot:
             writeToFile(self, clusters)
@@ -133,7 +133,7 @@ class StripePool(object):
 
         self.stripeNum = len(self.stripes)
 
-    def get_baseline_segs():
+    def get_baseline_segs(self):
         """
         Get baseline segments, given the baseline value
         """
@@ -188,14 +188,14 @@ class StripePool(object):
         for key in clusterCenters.keys():
             tempDis = np.abs(self.baseline - clusterCenters[key])
             if minDis > tempDis:
-                tempDis = tempDis
+                minDis = tempDis
                 mostClosedCluster = key
 
-        index = np.where(clusters == tempCluster)
+        index = np.where(clusters == mostClosedCluster)
         for i in index[0]:
             self.segPool.segments[i].tag = "BASELINE"
 
-        blSegL = filter(lambda item:item.tag == "BASELINE", self.segments)
+        blSegL = filter(lambda item:item.tag == "BASELINE", self.segPool.segments)
 
         return mostClosedCluster, blSegL
 
