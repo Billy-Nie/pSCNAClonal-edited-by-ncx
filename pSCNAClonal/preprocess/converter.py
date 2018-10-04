@@ -27,8 +27,9 @@ from pSCNAClonal.preprocess.data.pools.stripePool import StripePool
 from pSCNAClonal.preprocess.iofun import (PairedCountsIterator,
                                             PairedPileupIterator)
 from pSCNAClonal.preprocess.mcmc import MCMCLM
-from pSCNAClonal.preprocess.plotGC import GCStripePlot
-from pSCNAClonal.preprocess.utils import (get_BAF_counts,
+from pSCNAClonal.preprocess.plotGC import GCStripePlot, GCStripePoolPlot
+from pSCNAClonal.preprocess.utils import (get_BAF_counts, AnswerIndex,
+                                            dump_seg_to_txt,
                                             normal_heterozygous_filter)
 
 
@@ -96,7 +97,7 @@ class BamConverter:
             pklFile .close()
 
 
-        self._get_baseline()
+        blSegsL = self._get_baseline()
 
         stripePool = self._generate_stripe()
 
@@ -104,10 +105,21 @@ class BamConverter:
         stripePool.stripeNum = len(stripePool.stripes)
 
         self._dump(stripePool, "stripePool.pkl")
-        # self._dump_txt(stripePool, "stripePool.txt")
-        self._dump(self._segPool, "segPool.pkl")
+        self._dump_txt(stripePool, "stripePool.txt")
 
-        self.__generate_ROC_table(None,stripePool,self._segPool.segments)
+        self._dump(self._segPool, "segPool.pkl")
+        self._dump_txt(self._segPool, "segPool.txt")
+
+        if self.__answerFilePath != "":
+            self.__dump_seg_to_txt()
+        # self.__generate_ROC_table(None,stripePool,self._segPool.segments)
+
+    def __dump_seg_to_txt(self):
+        """
+        output table for R, draw figures
+        """
+        dump_seg_to_txt(self._segPool, self.__pathPrefix)
+
 
     def __generate_ROC_table(self,blSegs,stripePool,segPool):
 
@@ -209,11 +221,11 @@ class BamConverter:
 
 
 
-    def _dump_txt(self, stripePool, outFilePath):
+    def _dump_txt(self, Pool, outFilePath):
         """
-        out put stripePool into plain txt
+        out put Pool into plain txt
         """
-        stripePool.output_txt(self.__pathPrefix + outFilePath)
+        Pool.output_txt(self.__pathPrefix + "/" +  outFilePath)
 
     def _load_allele_counts(self):
         self._get_counts(self._tBamName, self._segPool)
@@ -245,6 +257,13 @@ class BamConverter:
         tempSP = StripePool(self._segPool, self._segPool.baseline, yDown, yUp,
                             stripeNum, noiseStripeNum)
         tempSP.get(byTag = False, plot= True)
+
+        # 如上一步中添加了baseline选项
+        # 那么这里的排序需要先排除baseline选型
+        gspp = GCStripePoolPlot(tempSP)
+        gspp.plot()
+
+        tempSP.stripes.sort(key = lambda item: int(item.tag))
 
         for idx, sp in enumerate(tempSP.stripes):
             tempSP.stripes[idx].id = idx

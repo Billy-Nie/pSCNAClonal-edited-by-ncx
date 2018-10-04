@@ -44,6 +44,7 @@ class SegmentPool:
 
         self.baseline = -1  #此处baseline是对数值
         self.segments = []
+        self.Lambda_S = None
 
     def load_seg_bed(self, bedName, containsReadNum=True):
         """
@@ -124,9 +125,7 @@ class SegmentPool:
             tempSeg.end = bedEndL[i]
             tempSeg.nReadNum = nReadNum
             tempSeg.tReadNum = tReadNum
-            #这里是我加的一行
             tempSeg.gc = gcL[i]
-            #上面一行是我加的qwq
 
             self.segments.append(tempSeg)
 
@@ -136,6 +135,7 @@ class SegmentPool:
         self._get_LOH_status(baselineThredLOH, isPreprocess)
         self._get_APM_frac()
         self._get_APM_status(baselineThredAPM)
+
         self._calc_baseline(maxCopyNumber, subcloneNum, isPreprocess)
 
         self._get_baseline_stripe()
@@ -263,7 +263,6 @@ class SegmentPool:
 
         self.baseline = rdrMinLog
         self.Lambda_S = math.e ** rdrMinLog
-        # raw_input()
 
 
     #根据每一个segment的pairedCounts为segments里面的每一个元素设置LOHFrac
@@ -312,3 +311,27 @@ class SegmentPool:
                 APMNum = APMNum + 1
 
         print "APMNum/segNum = {0}/{1}".format(APMNum, len(self.segments))
+
+    def output_text(self, outFileName):
+        """
+        output txt file as input file of mh model
+        """
+        with open(outFileName, 'w') as outFile:
+            outFile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(
+                "name", "sid", "segsIdxL", "pairedCounts", "tReadNum",
+                "nReadNum", "tag"))
+            for s in self.segments:
+                aT = s.pairedCounts[:, 2]
+                bT = s.pairedCounts[:, 3]
+                aTstrl = np.array_str(aT).strip("[]").split()
+                bTstrl = np.array_str(bT).strip("[]").split()
+
+                print s.name
+                outFile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(
+                    "{0}_{1}_{2}".format(s.chromName, str(s.start), str(s.end)),
+                    "{0}_{1}_{2}".format(s.chromName, str(s.start), str(s.end)),
+                    ",",
+                    "{0}|{1}".format(",".join(aTstrl), ",".join(bTstrl)),
+                    s.tReadNum,
+                    s.nReadNum,
+                    s.tag))

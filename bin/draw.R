@@ -1,6 +1,6 @@
 ###############plot stripe before #############
 rm(list = ls())
-setwd("/media/d/docEdit/tempArticle/BIBM2017/p-SCNAClonal/plot_data")
+setwd("/Users/billy/Sophomore/bioinformatics/LabNotes/p-scnaclonal-pscnaclonal/plot_data")
 stripeData <- read.table("./aggregate_data/aggregate_data.txt", header = T, sep = "\t")
 stripeData$C <- as.character(stripeData$C)
 colnames(stripeData) <- c("X", "Y", "Stripe")
@@ -31,11 +31,7 @@ g <- g + theme(
   axis.text.y = element_text(size=10.5),
   plot.title = element_text(size=10.5))
 
-png(paste("/home/dustin/github/mythesis/figures/stripeAggregate.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
-g
-dev.off()
-
-png(paste("/media/d/docEdit/tempArticle/BIBM2017/p-SCNAClonal/figures/stripeAggregate.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
+png(paste("/Users/billy/Sophomore/bioinformatics/LabNotes/p-scnaclonal-pscnaclonal/plot_data/figures/stripeAggregate.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
 g
 dev.off()
 
@@ -44,7 +40,7 @@ g
 
 
 rm(list = ls())
-setwd("/media/d/docEdit/tempArticle/BIBM2017/p-SCNAClonal/plot_data")
+setwd("/Users/billy/Sophomore/bioinformatics/LabNotes/p-scnaclonal-pscnaclonal/plot_data")
 
 BAFClusterCenter <- read.table("./BAF_plot_data/BAFPlot_centers_data.txt", header = T, sep = "\t")
 colnames(BAFClusterCenter) <- c("BAF", "Stripe")
@@ -72,17 +68,14 @@ g <- g + theme(
   axis.text.y = element_text(size=10.5),
   plot.title = element_text(size=10.5))
 
-png(paste("/home/dustin/github/mythesis/figures/stripeBAFClustering.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
-g
-dev.off()
-png(paste("/media/d/docEdit/tempArticle/BIBM2017/p-SCNAClonal/figures/stripeBAFClustering.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
+png(paste("/Users/billy/Sophomore/bioinformatics/LabNotes/p-scnaclonal-pscnaclonal/plot_data/figures/stripeBAFClustering.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
 g
 dev.off()
 g
 
 ################draw after#################
 rm(list = ls())
-setwd("/media/d/docEdit/tempArticle/BIBM2017/p-SCNAClonal/plot_data")
+setwd("/Users/billy/Sophomore/bioinformatics/LabNotes/p-scnaclonal-pscnaclonal/plot_data")
 stripeData <- read.table("./decompose_plot_data/decompose_data.txt", header = T, sep = "\t")
 stripeData$C <- as.character(stripeData$C)
 colnames(stripeData) <- c("X", "Y", "Stripe")
@@ -113,12 +106,7 @@ g <- g + theme(
   axis.text.y = element_text(size=10.5),
   plot.title = element_text(size=10.5))
 
-png(paste("/home/dustin/github/mythesis/figures/stripeDecompose.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
+png(paste("/Users/billy/Sophomore/bioinformatics/LabNotes/p-scnaclonal-pscnaclonal/plot_data/figures/stripeDecompose.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
 g
 dev.off()
-
-png(paste("/media/d/docEdit/tempArticle/BIBM2017/p-SCNAClonal/figures/stripeDecompose.png", sep = ""), pointsize = 10.5, family = "Times", width = 2.8, height= 2.5, units="in", res=600)
-g
-dev.off()
-
 g

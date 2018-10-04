@@ -87,13 +87,13 @@ class StripePool(object):
             segments = self.segPool.segments
             x = np.array(map(lambda seg: seg.gc, segments))
             y = np.array(map(lambda seg: np.log(seg.tReadNum + 1) -
-                                         np.log(seg.nReadNum + 1), segments))
+                                        np.log(seg.nReadNum + 1), segments))
             if not os.path.exists("plot_data/aggregate_data"):
-                os.makedirs("plot_data/aggregate_data")
+               os.makedirs("plot_data/aggregate_data")
             outFile = open("plot_data/aggregate_data/aggregate_data.txt", "wr")
             outFile.write("X\tY\tC\n")
             for i in range(0, len(cluster)):
-                outFile.write("{0}\t{1}\t{2}\n".format(x[i], y[i], cluster[i]))
+               outFile.write("{0}\t{1}\t{2}\n".format(x[i], y[i], cluster[i]))
             outFile.close()
 
         rdRaioLog = []
@@ -114,8 +114,8 @@ class StripePool(object):
 
         baselineCluster, _ = self.__get_baseline_from_stripe(clusters, ycV)
 
-        if plot:
-            writeToFile(self, clusters)
+        #if plot:
+        #    writeToFile(self, clusters)
 
         # 此处应该只获取最大和最小值之间的条带，且要保留原始位置，以方便索引
         # 此处获取最小和最大值之间的条带的方法是：直接去除这些位置不列入计算范围
@@ -349,13 +349,16 @@ class StripePool(object):
                         # for i in range(len(subSegIdxL) - 1,-1,-1):
                             # if i in segs_to_be_deleted:
                                 # del subSegIdxL[i]
-                        if len(subSegL) <= 0:
-                            continue
+                        #if len(subSegL) <= 0:
+                        #    continue
 
                         tempStripe = Stripe()
                         tempStripe.sid = "{0}_{1}".format(str(cId), str(label))
                         tempStripe.init_segs(subSegL, subSegIdxL)
                         self.stripes.append(tempStripe)
+                        for segIdx in subSegIdxL:
+                            self.segPool.segments[segIdx].stripeID = tempStripe.sid
+
                     else:
                         tempTags = set([seg.tag for seg in subSegL])
                         for tempTag in tempTags:
@@ -382,6 +385,8 @@ class StripePool(object):
                             tempStripe.init_segs(subSubSegL, subSubSegIdxL)
                             tempStripe.tag = tempTag
                             self.stripes.append(tempStripe)
+                            for segIdx in subSubSegIdxL:
+                                self.segPool.segments[segIdx].stripeID = tempStripe.sid
                             tagIdx = tagIdx + 1
 
         # merge baseline, or not baseline in the stripe? toggle

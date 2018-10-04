@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 '''
 # =============================================================================
 #      FileName: utils.py
@@ -6,7 +8,7 @@
 #         Email: chu@yanshuo.name
 #      HomePage: http://yanshuo.name
 #       Version: 0.0.1
-#    LastChange: 2018-03-03 08:55:34
+#    LastChange: 2018-10-01 19:55:34
 #       History: Yi Li
 # =============================================================================
 '''
@@ -20,6 +22,88 @@ from scipy.special import gammaln
 from scipy.stats import beta, binom
 
 import pSCNAClonal.constants as constants
+
+class AnswerIndex(object):
+    """Break points for segments, for searching index"""
+    def __init__(self, answerFilePath):
+        """init with answer file"""
+        self._answerFilePath = answerFilePath
+        self._colNames = ""
+        self._answerDict = {}
+        # {1_1: "XXXX"}
+        self._startBreakpoints = {}
+        self._endBreakpoints = {}
+        #{1:[12, 23,1 ,23],}
+        self.__index()
+
+    def valueName(self):
+        return self._colNames()
+
+    def __index(self):
+        with open(self._answerFilePath) as answerFile:
+            totalLine = 0
+            for line in answerFile:
+                totalLine = totalLine + 1
+                line = line.strip()
+                if line == "":
+                    continue
+                if 1 == totalLine:
+                    self._colNames = line
+                    continue
+                listLine = line.split("\t")
+                answer = "\t".join(listLine[3:])
+                key = "_".join(listLine[0:3])
+                self._answerDict[key] = answer
+
+                chrom = listLine[0]
+                start = int(listLine[1])
+                end = int(listLine[2])
+
+                if chrom not in self._startBreakpoints:
+                    self._startBreakpoints[chrom] = []
+
+                if chrom not in self._endBreakpoints:
+                    self._endBreakpoints[chrom] = []
+
+                self._startBreakpoints[chrom].append(start)
+                self._endBreakpoints[chrom].append(end)
+
+        for chrom in self._startBreakpoints:
+            self._startBreakpoints[chrom] = \
+                np.array(self._startBreakpoints[chrom])
+            self._endBreakpoints[chrom] = \
+                np.array(self._endBreakpoints[chrom])
+            self._startBreakpoints[chrom].sort()
+            self._endBreakpoints[chrom].sort()
+
+    def getValue(self, chrom, start, end):
+        chrom = str(chrom)
+        start = int(start)
+        end = int(end)
+        head = np.max(self._startBreakpoints[chrom][self._startBreakpoints[chrom] <= start])
+        tail = np.min(self._endBreakpoints[chrom][self._endBreakpoints[chrom] >= end])
+
+        headIdx = np.where(head == self._startBreakpoints[chrom])[0][0]
+        tailIdx = np.where(tail == self._endBreakpoints[chrom])[0][0]
+
+        key = ""
+        if 0 == tailIdx - headIdx:
+            key = "{0}_{1}_{2}".format(chrom, str(head), str(tail))
+        elif 1 == tailIdx - headIdx:
+            leftDist = np.abs(head - start)
+            rightDist = np.abs(tail - end)
+            if leftDist < rightDist:
+                key = "{0}_{1}_{2}".format(chrom, str(head), str(self._endBreakpoints[chrom][tailIdx-1]))
+            else:
+                key = "{0}_{1}_{2}".format(chrom, str(self._startBreakpoints[chrom][headIdx + 1]),
+                                           str(tail))
+
+        else:
+            key = "{0}_{1}_{2}".format(chrom, str(self._startBreakpoints[chrom][headIdx+1]),
+                                       str(self._endBreakpoints[chrom][headIdx+2]))
+
+        return self._answerDict[key]
+
 
 
 def BEDnParser(bedName):
@@ -109,6 +193,13 @@ def chrom_name_to_idx(chromName):
 
     return idx
 
+def dump_seg_to_txt(segPool, pathPreFix):
+    outFilePath = pathPreFix + "/segments.txt"
+    with open(outFilePath,'w') as outFile:
+        outFile.write(segPool.segments[0].toName())
+        # TODO : 我们这里的copyNumberAnswer, genotypeAnswer, phiAnswer是什么？
+        for seg in segPool.segments:
+            outFile.write(seg.toString + '\n')
 
 def get_chrom_format(chromNameL):
     format = 'NONE'
